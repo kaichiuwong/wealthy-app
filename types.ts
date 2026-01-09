@@ -52,6 +52,7 @@ declare global {
   interface ImportMetaEnv {
     readonly VITE_API_KEY: string;
     readonly VITE_COINGECKO_API_KEY: string;
+    readonly VITE_ALLOWED_EMAILS: string;
   }
 
   interface ImportMeta {

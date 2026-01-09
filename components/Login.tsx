@@ -6,8 +6,6 @@ interface LoginProps {
   onSuccess: () => void;
 }
 
-const ALLOWED_EMAIL = 'chiu0907@gmail.com';
-
 const Login: React.FC<LoginProps> = ({ onSuccess }) => {
   const [step, setStep] = useState<'email' | 'auth'>('email');
   const [email, setEmail] = useState('');
@@ -29,7 +27,14 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
       return;
     }
 
-    if (email.toLowerCase().trim() !== ALLOWED_EMAIL.toLowerCase()) {
+    // Get allowed emails from environment variable, split by semicolon, trim whitespace, and normalize to lowercase
+    const allowedEmailsEnv = import.meta.env.VITE_ALLOWED_EMAILS || '';
+    const allowedList = allowedEmailsEnv.split(';').map(e => e.trim().toLowerCase()).filter(e => e.length > 0);
+
+    // If no emails are configured in env, we might want to fail safe or allow none. 
+    // Assuming secure by default: if list is empty, no one can login.
+    
+    if (!allowedList.includes(email.toLowerCase().trim())) {
       setError('Access Restricted: This email is not authorized.');
       return;
     }
