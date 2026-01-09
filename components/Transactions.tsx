@@ -8,7 +8,10 @@ interface TransactionsProps {
 }
 
 const Transactions: React.FC<TransactionsProps> = ({ data }) => {
-  const [showStakeDetails, setShowStakeDetails] = useState(false);
+  const [showCashDetails, setShowCashDetails] = useState(false);
+  const [showStockDetails, setShowStockDetails] = useState(false);
+  const [showCryptoDetails, setShowCryptoDetails] = useState(false);
+  
   const sortedMonths = Object.keys(data.balances).sort().reverse();
 
   const getAmount = (monthKey: string, item: string, currency?: string) => {
@@ -60,43 +63,69 @@ const Transactions: React.FC<TransactionsProps> = ({ data }) => {
                 <th rowSpan={2} className="border-b border-l border-slate-800 px-4 py-4 text-emerald-400 font-bold bg-slate-950">
                   Net Worth
                 </th>
-                {/* CASH Header */}
-                <th colSpan={4} className="border-b border-l border-slate-800 px-4 py-2 text-center text-emerald-500 font-bold bg-slate-950/50">
-                  CASH
-                </th>
-                {/* STOCK Header - Clickable to toggle details */}
+                {/* CASH Header - Clickable */}
                 <th 
-                  colSpan={showStakeDetails ? 5 : 3} 
-                  onClick={() => setShowStakeDetails(!showStakeDetails)}
-                  className="border-b border-l border-slate-800 px-4 py-2 text-center text-indigo-500 font-bold bg-slate-950/50 cursor-pointer hover:bg-slate-900/80 transition-colors select-none group"
+                  colSpan={showCashDetails ? 4 : 2} 
+                  onClick={() => setShowCashDetails(!showCashDetails)}
+                  className="border-b border-l border-slate-800 px-4 py-2 text-center text-emerald-500 font-bold bg-slate-950/50 cursor-pointer hover:bg-slate-900/80 transition-colors select-none group"
                 >
-                  <div className="flex items-center justify-center gap-1">
-                    STOCK
-                    {showStakeDetails ? (
+                   <div className="flex items-center justify-center gap-1">
+                    CASH
+                    {showCashDetails ? (
                       <ChevronDown size={14} className="opacity-50 group-hover:opacity-100" />
                     ) : (
                       <ChevronRight size={14} className="opacity-50 group-hover:opacity-100" />
                     )}
                   </div>
                 </th>
-                {/* CRYPTO Header */}
-                <th colSpan={5} className="border-b border-l border-slate-800 px-4 py-2 text-center text-violet-500 font-bold bg-slate-950/50">
-                  CRYPTO
+                {/* STOCK Header - Clickable */}
+                <th 
+                  colSpan={showStockDetails ? 5 : 2} 
+                  onClick={() => setShowStockDetails(!showStockDetails)}
+                  className="border-b border-l border-slate-800 px-4 py-2 text-center text-indigo-500 font-bold bg-slate-950/50 cursor-pointer hover:bg-slate-900/80 transition-colors select-none group"
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    STOCK
+                    {showStockDetails ? (
+                      <ChevronDown size={14} className="opacity-50 group-hover:opacity-100" />
+                    ) : (
+                      <ChevronRight size={14} className="opacity-50 group-hover:opacity-100" />
+                    )}
+                  </div>
+                </th>
+                {/* CRYPTO Header - Clickable */}
+                <th 
+                  colSpan={showCryptoDetails ? 5 : 2}
+                  onClick={() => setShowCryptoDetails(!showCryptoDetails)}
+                  className="border-b border-l border-slate-800 px-4 py-2 text-center text-violet-500 font-bold bg-slate-950/50 cursor-pointer hover:bg-slate-900/80 transition-colors select-none group"
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    CRYPTO
+                    {showCryptoDetails ? (
+                      <ChevronDown size={14} className="opacity-50 group-hover:opacity-100" />
+                    ) : (
+                      <ChevronRight size={14} className="opacity-50 group-hover:opacity-100" />
+                    )}
+                  </div>
                 </th>
               </tr>
               <tr>
                 {/* CASH Subcolumns */}
                 <th className="border-b border-l border-slate-800 px-4 py-3 text-slate-200 font-semibold bg-slate-950/40">Total</th>
                 <th className="border-b border-slate-800 px-4 py-3 text-slate-400 bg-slate-950/40">%</th>
-                <th className="border-b border-l border-slate-800/50 px-4 py-3 bg-slate-950/30">HKD</th>
-                <th className="border-b border-slate-800 px-4 py-3 bg-slate-950/30">AUD</th>
+                {showCashDetails && (
+                  <>
+                    <th className="border-b border-l border-slate-800/50 px-4 py-3 bg-slate-950/30">HKD</th>
+                    <th className="border-b border-slate-800 px-4 py-3 bg-slate-950/30">AUD</th>
+                  </>
+                )}
                 
                 {/* STOCK Subcolumns */}
                 <th className="border-b border-l border-slate-800 px-4 py-3 text-slate-200 font-semibold bg-slate-950/40">Total</th>
                 <th className="border-b border-slate-800 px-4 py-3 text-slate-400 bg-slate-950/40">%</th>
-                <th className="border-b border-l border-slate-800/50 px-4 py-3 bg-slate-950/30">IBKR</th>
-                {showStakeDetails && (
+                {showStockDetails && (
                   <>
+                    <th className="border-b border-l border-slate-800/50 px-4 py-3 bg-slate-950/30">IBKR</th>
                     <th className="border-b border-slate-800 px-4 py-3 bg-slate-950/30">STAKE (AUD)</th>
                     <th className="border-b border-slate-800 px-4 py-3 bg-slate-950/30">STAKE (USD)</th>
                   </>
@@ -105,9 +134,13 @@ const Transactions: React.FC<TransactionsProps> = ({ data }) => {
                 {/* CRYPTO Subcolumns */}
                 <th className="border-b border-l border-slate-800 px-4 py-3 text-slate-200 font-semibold bg-slate-950/40">Total</th>
                 <th className="border-b border-slate-800 px-4 py-3 text-slate-400 bg-slate-950/40">%</th>
-                <th className="border-b border-l border-slate-800/50 px-4 py-3 bg-slate-950/30">BTC</th>
-                <th className="border-b border-slate-800 px-4 py-3 bg-slate-950/30">XRP</th>
-                <th className="border-b border-slate-800 px-4 py-3 bg-slate-950/30">ETH</th>
+                {showCryptoDetails && (
+                  <>
+                    <th className="border-b border-l border-slate-800/50 px-4 py-3 bg-slate-950/30">BTC</th>
+                    <th className="border-b border-slate-800 px-4 py-3 bg-slate-950/30">XRP</th>
+                    <th className="border-b border-slate-800 px-4 py-3 bg-slate-950/30">ETH</th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">
@@ -136,12 +169,16 @@ const Transactions: React.FC<TransactionsProps> = ({ data }) => {
                     <td className="px-4 py-4 text-xs text-slate-500 bg-slate-900/10">
                       {formatPercent(cash.percentage)}
                     </td>
-                    <td className="px-4 py-4 text-slate-300 border-l border-slate-800/50">
-                      {formatFiat(getAmount(monthKey, 'BANK', 'HKD'), 'HKD')}
-                    </td>
-                    <td className="px-4 py-4 text-slate-300">
-                      {formatFiat(getAmount(monthKey, 'BANK', 'AUD'), 'AUD')}
-                    </td>
+                    {showCashDetails && (
+                      <>
+                        <td className="px-4 py-4 text-slate-300 border-l border-slate-800/50">
+                          {formatFiat(getAmount(monthKey, 'BANK', 'HKD'), 'HKD')}
+                        </td>
+                        <td className="px-4 py-4 text-slate-300">
+                          {formatFiat(getAmount(monthKey, 'BANK', 'AUD'), 'AUD')}
+                        </td>
+                      </>
+                    )}
 
                     {/* STOCK Group */}
                     <td className="px-4 py-4 font-semibold text-slate-200 border-l border-slate-800 bg-slate-900/10">
@@ -150,11 +187,11 @@ const Transactions: React.FC<TransactionsProps> = ({ data }) => {
                     <td className="px-4 py-4 text-xs text-slate-500 bg-slate-900/10">
                       {formatPercent(stock.percentage)}
                     </td>
-                    <td className="px-4 py-4 text-slate-300 border-l border-slate-800/50">
-                      {formatFiat(getAmount(monthKey, 'IBKR'), 'AUD')}
-                    </td>
-                    {showStakeDetails && (
+                    {showStockDetails && (
                       <>
+                        <td className="px-4 py-4 text-slate-300 border-l border-slate-800/50">
+                          {formatFiat(getAmount(monthKey, 'IBKR'), 'AUD')}
+                        </td>
                         <td className="px-4 py-4 text-slate-300">
                           {formatFiat(getAmount(monthKey, 'STAKE', 'AUD'), 'AUD')}
                         </td>
@@ -171,15 +208,19 @@ const Transactions: React.FC<TransactionsProps> = ({ data }) => {
                     <td className="px-4 py-4 text-xs text-slate-500 bg-slate-900/10">
                       {formatPercent(crypto.percentage)}
                     </td>
-                    <td className="px-4 py-4 font-mono text-slate-300 border-l border-slate-800/50">
-                      {formatCrypto(getAmount(monthKey, 'BTC'), 'BTC')}
-                    </td>
-                    <td className="px-4 py-4 font-mono text-slate-300">
-                      {formatCrypto(getAmount(monthKey, 'XRP'), 'XRP')}
-                    </td>
-                    <td className="px-4 py-4 font-mono text-slate-300">
-                      {formatCrypto(getAmount(monthKey, 'ETH'), 'ETH')}
-                    </td>
+                    {showCryptoDetails && (
+                      <>
+                        <td className="px-4 py-4 font-mono text-slate-300 border-l border-slate-800/50">
+                          {formatCrypto(getAmount(monthKey, 'BTC'), 'BTC')}
+                        </td>
+                        <td className="px-4 py-4 font-mono text-slate-300">
+                          {formatCrypto(getAmount(monthKey, 'XRP'), 'XRP')}
+                        </td>
+                        <td className="px-4 py-4 font-mono text-slate-300">
+                          {formatCrypto(getAmount(monthKey, 'ETH'), 'ETH')}
+                        </td>
+                      </>
+                    )}
                   </tr>
                 );
               })}
