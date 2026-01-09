@@ -77,34 +77,56 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const fetchFxRates = async (): Promise<Record<string, number>> => {
+  const fetchFxRates = async (dateStr: string): Promise<Record<string, number>> => {
     const rates: Record<string, number> = {
-      AUD: 1,
+      AUD: 1.0,
       HKD: 0.20, // Fallback
       BTC: 150000, // Fallback
       ETH: 4000, // Fallback
       XRP: 4.0 // Fallback
     };
 
-    try {
-        // Try to fetch crypto rates
-        const cryptoRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,ripple&vs_currencies=aud');
-        if (cryptoRes.ok) {
-            const cryptoData = await cryptoRes.json();
-            if (cryptoData.bitcoin?.aud) rates.BTC = cryptoData.bitcoin.aud;
-            if (cryptoData.ethereum?.aud) rates.ETH = cryptoData.ethereum.aud;
-            if (cryptoData.ripple?.aud) rates.XRP = cryptoData.ripple.aud;
-        }
+    const [year, month, day] = dateStr.split('-');
+    const coingeckoDate = `${day}-${month}-${year}`; // dd-mm-yyyy
 
-        // Try to fetch Fiat rates (HKD -> AUD)
-        // Using open.er-api.com which is free and requires no key
-        const fiatRes = await fetch('https://open.er-api.com/v6/latest/HKD');
+    try {
+        // 1. Fetch Historical Fiat (HKD -> AUD) using Frankfurter
+        const fiatRes = await fetch(`https://api.frankfurter.app/${dateStr}?from=HKD&to=AUD`);
         if (fiatRes.ok) {
             const fiatData = await fiatRes.json();
             if (fiatData.rates?.AUD) rates.HKD = fiatData.rates.AUD;
         }
     } catch (e) {
-        console.warn('Failed to fetch live rates, using fallbacks', e);
+        console.warn('Failed to fetch historical fiat rates', e);
+    }
+
+    try {
+        // 2. Fetch Historical Crypto using CoinGecko
+        // Note: CoinGecko Free API has rate limits.
+        const coins = [
+            { id: 'bitcoin', symbol: 'BTC' },
+            { id: 'ethereum', symbol: 'ETH' },
+            { id: 'ripple', symbol: 'XRP' }
+        ];
+
+        const cryptoPromises = coins.map(async (coin) => {
+            try {
+                const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coin.id}/history?date=${coingeckoDate}&localization=false`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.market_data?.current_price?.aud) {
+                        rates[coin.symbol] = data.market_data.current_price.aud;
+                    }
+                }
+            } catch (err) {
+                console.warn(`Failed to fetch history for ${coin.symbol}`, err);
+            }
+        });
+
+        await Promise.all(cryptoPromises);
+
+    } catch (e) {
+        console.warn('Failed to fetch historical crypto rates', e);
     }
     return rates;
   };
@@ -114,7 +136,8 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
     setIsSubmitting(true);
 
     try {
-        const rates = await fetchFxRates();
+        // Fetch rates based on the selected date
+        const rates = await fetchFxRates(formData.date);
         const promises: Promise<void>[] = [];
 
         // Helper to push requests
