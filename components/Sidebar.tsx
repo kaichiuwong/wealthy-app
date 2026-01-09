@@ -1,7 +1,21 @@
 import React from 'react';
 import { LayoutDashboard, PieChart, Wallet, Settings, LogOut, TrendingUp } from 'lucide-react';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  currentView: 'dashboard' | 'transactions';
+  onNavigate: (view: 'dashboard' | 'transactions') => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
+  const getLinkClass = (view: 'dashboard' | 'transactions') => {
+    const isActive = currentView === view;
+    return `flex w-full items-center rounded-lg p-3 transition duration-75 group ${
+      isActive 
+        ? 'bg-slate-800 text-white' 
+        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+    }`;
+  };
+
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 -translate-x-full border-r border-slate-800 bg-slate-950 transition-transform sm:translate-x-0">
       <div className="flex h-full flex-col px-3 py-4">
@@ -14,10 +28,13 @@ const Sidebar: React.FC = () => {
         
         <ul className="space-y-2 font-medium">
           <li>
-            <a href="#" className="flex items-center rounded-lg bg-slate-800 p-3 text-white group">
-              <LayoutDashboard className="h-5 w-5 text-emerald-500" />
+            <button 
+              onClick={() => onNavigate('dashboard')}
+              className={getLinkClass('dashboard')}
+            >
+              <LayoutDashboard className={`h-5 w-5 ${currentView === 'dashboard' ? 'text-emerald-500' : 'text-slate-400 group-hover:text-white'}`} />
               <span className="ml-3">Dashboard</span>
-            </a>
+            </button>
           </li>
           <li>
             <a href="#" className="flex items-center rounded-lg p-3 text-slate-400 hover:bg-slate-800 hover:text-white group">
@@ -26,10 +43,13 @@ const Sidebar: React.FC = () => {
             </a>
           </li>
           <li>
-            <a href="#" className="flex items-center rounded-lg p-3 text-slate-400 hover:bg-slate-800 hover:text-white group">
-              <Wallet className="h-5 w-5 transition duration-75 group-hover:text-white" />
+            <button 
+              onClick={() => onNavigate('transactions')}
+              className={getLinkClass('transactions')}
+            >
+              <Wallet className={`h-5 w-5 ${currentView === 'transactions' ? 'text-emerald-500' : 'text-slate-400 group-hover:text-white'}`} />
               <span className="ml-3">Transactions</span>
-            </a>
+            </button>
           </li>
         </ul>
         

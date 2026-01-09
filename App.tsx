@@ -4,6 +4,7 @@ import { fetchWealthData } from './services/api';
 import { parseDateKey, formatDateDisplay } from './utils';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
+import Transactions from './components/Transactions';
 import { Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -11,6 +12,7 @@ const App: React.FC = () => {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentView, setCurrentView] = useState<'dashboard' | 'transactions'>('dashboard');
 
   useEffect(() => {
     const loadData = async () => {
@@ -78,8 +80,13 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <Sidebar />
-      <Dashboard data={data} chartData={chartData} />
+      <Sidebar currentView={currentView} onNavigate={setCurrentView} />
+      
+      {currentView === 'dashboard' ? (
+        <Dashboard data={data} chartData={chartData} />
+      ) : (
+        <Transactions data={data} />
+      )}
     </div>
   );
 };
