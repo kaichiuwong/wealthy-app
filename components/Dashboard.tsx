@@ -46,26 +46,32 @@ const Dashboard: React.FC<DashboardProps> = ({ data, chartData }) => {
 
   const currentMonthData: MonthData | undefined = data.balances[selectedMonthKey];
 
-  // Calculate Metrics
+  // Calculate Metrics based on selected month
   const metrics = useMemo(() => {
     if (!chartData.length) return null;
-    const latest = chartData[chartData.length - 1];
-    const previous = chartData.length > 1 ? chartData[chartData.length - 2] : latest;
     
-    const change = latest.total - previous.total;
-    const changePercent = (change / previous.total) * 100;
+    // Find the index corresponding to the selected month
+    const index = chartData.findIndex(d => d.month === selectedMonthKey);
+    // Fallback to latest if not found
+    const effectiveIndex = index !== -1 ? index : chartData.length - 1;
+    
+    const current = chartData[effectiveIndex];
+    const previous = effectiveIndex > 0 ? chartData[effectiveIndex - 1] : current;
+    
+    const change = current.total - previous.total;
+    const changePercent = previous.total !== 0 ? (change / previous.total) * 100 : 0;
 
     return {
-      total: latest.total,
+      total: current.total,
       change,
       changePercent,
       breakdown: {
-        cash: latest.cash,
-        stock: latest.stock,
-        crypto: latest.crypto
+        cash: current.cash,
+        stock: current.stock,
+        crypto: current.crypto
       }
     };
-  }, [chartData]);
+  }, [chartData, selectedMonthKey]);
 
   // Pie Chart Data
   const pieData = useMemo(() => {
@@ -166,7 +172,18 @@ const Dashboard: React.FC<DashboardProps> = ({ data, chartData }) => {
           <h3 className="mb-6 text-lg font-bold text-white">Net Worth Trend</h3>
           <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <AreaChart 
+                data={chartData} 
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                onMouseMove={(state: any) => {
+                  if (state.isTooltipActive && state.activePayload && state.activePayload.length > 0) {
+                    const month = state.activePayload[0].payload.month;
+                    if (month && month !== selectedMonthKey) {
+                      setSelectedMonthKey(month);
+                    }
+                  }
+                }}
+              >
                 <defs>
                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
