@@ -3,7 +3,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Legend, Cell, PieChart, Pie
 } from 'recharts';
-import { ArrowUpRight, ArrowDownRight, DollarSign, Activity, Bitcoin, Landmark } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, DollarSign, Bitcoin, Landmark } from 'lucide-react';
 import { ChartDataPoint, ApiResponse, MonthData } from '../types';
 import { formatCurrency, formatPercentage } from '../utils';
 
