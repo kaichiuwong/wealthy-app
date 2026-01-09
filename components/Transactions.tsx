@@ -85,53 +85,74 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
     const rates: Record<string, number> = {
       AUD: 1.0,
       HKD: 0.20, // Fallback
-      BTC: 150000, // Fallback
+      BTC: 100000, // Fallback
       ETH: 4000, // Fallback
       XRP: 4.0 // Fallback
     };
 
-    const [year, month, day] = dateStr.split('-');
-    const coingeckoDate = `${day}-${month}-${year}`; // dd-mm-yyyy
+    const today = new Date().toISOString().split('T')[0];
+    const isToday = dateStr === today;
 
+    // 1. Fiat (HKD) - Frankfurter
     try {
-        // 1. Fetch Historical Fiat (HKD -> AUD) using Frankfurter
-        const fiatRes = await fetch(`https://api.frankfurter.app/${dateStr}?from=HKD&to=AUD`);
+        const url = isToday 
+            ? 'https://api.frankfurter.app/latest?from=HKD&to=AUD'
+            : `https://api.frankfurter.app/${dateStr}?from=HKD&to=AUD`;
+            
+        const fiatRes = await fetch(url);
         if (fiatRes.ok) {
             const fiatData = await fiatRes.json();
             if (fiatData.rates?.AUD) rates.HKD = fiatData.rates.AUD;
         }
     } catch (e) {
-        console.warn('Failed to fetch historical fiat rates', e);
+        console.warn('Fiat rate fetch failed', e);
     }
 
+    // 2. Crypto (BTC, ETH, XRP) - CoinGecko
     try {
-        // 2. Fetch Historical Crypto using CoinGecko
-        // Note: CoinGecko Free API has rate limits.
-        const coins = [
-            { id: 'bitcoin', symbol: 'BTC' },
-            { id: 'ethereum', symbol: 'ETH' },
-            { id: 'ripple', symbol: 'XRP' }
-        ];
-
-        const cryptoPromises = coins.map(async (coin) => {
-            try {
-                const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coin.id}/history?date=${coingeckoDate}&localization=false`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.market_data?.current_price?.aud) {
-                        rates[coin.symbol] = data.market_data.current_price.aud;
-                    }
-                }
-            } catch (err) {
-                console.warn(`Failed to fetch history for ${coin.symbol}`, err);
+        if (isToday) {
+            // Single API call for all crypto to avoid 429
+            const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,ripple&vs_currencies=aud');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.bitcoin?.aud) rates.BTC = data.bitcoin.aud;
+                if (data.ethereum?.aud) rates.ETH = data.ethereum.aud;
+                if (data.ripple?.aud) rates.XRP = data.ripple.aud;
             }
-        });
+        } else {
+             // Historical - must be sequential to avoid 429 on free tier
+             const coins = [
+                { id: 'bitcoin', symbol: 'BTC' },
+                { id: 'ethereum', symbol: 'ETH' },
+                { id: 'ripple', symbol: 'XRP' }
+            ];
+            
+            const [year, month, day] = dateStr.split('-');
+            const coingeckoDate = `${day}-${month}-${year}`; // dd-mm-yyyy
 
-        await Promise.all(cryptoPromises);
-
+            // Execute sequentially
+            for (const coin of coins) {
+                try {
+                    // Small delay to be polite to the API
+                    if (coins.indexOf(coin) > 0) {
+                        await new Promise(r => setTimeout(r, 250));
+                    }
+                    const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coin.id}/history?date=${coingeckoDate}&localization=false`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.market_data?.current_price?.aud) {
+                            rates[coin.symbol] = data.market_data.current_price.aud;
+                        }
+                    }
+                } catch (err) {
+                     console.warn(`Failed to fetch history for ${coin.symbol}`, err);
+                }
+            }
+        }
     } catch (e) {
-        console.warn('Failed to fetch historical crypto rates', e);
+        console.warn('Crypto rate fetch failed', e);
     }
+
     return rates;
   }, []);
 
@@ -157,9 +178,8 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
     setIsSubmitting(true);
 
     try {
-        // Use current rates if they match the date, otherwise fetch (safety check)
+        // Use current rates from state (fetched by useEffect)
         const rates = currentRates; 
-        // Note: We assume currentRates are up to date because of the useEffect hook.
         
         const promises: Promise<void>[] = [];
 
@@ -462,9 +482,19 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
 
                 {/* CRYPTO */}
                 <div className="col-span-1 space-y-4 rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 md:col-span-2">
-                   <h3 className="flex items-center gap-2 font-semibold text-violet-400">
-                      CRYPTO
-                   </h3>
+                   <div className="flex items-center justify-between">
+                       <h3 className="flex items-center gap-2 font-semibold text-violet-400">
+                          CRYPTO
+                       </h3>
+                       <a 
+                         href="https://www.coingecko.com" 
+                         target="_blank" 
+                         rel="noopener noreferrer" 
+                         className="text-xs text-slate-500 hover:text-violet-400 transition-colors"
+                       >
+                         Powered by CoinGecko
+                       </a>
+                   </div>
                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                         <div>
                             <label className="mb-1 block text-xs font-medium text-slate-500">BTC</label>
@@ -501,7 +531,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                 </button>
                 <button 
                   type="submit" 
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || loadingRates}
                   className="flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
                 >
                   {isSubmitting && <Loader2 size={16} className="animate-spin" />}
