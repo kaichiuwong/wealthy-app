@@ -30,3 +30,40 @@ export const fetchWealthData = async (): Promise<ApiResponse> => {
     throw error;
   }
 };
+
+export interface BalancePayload {
+  inputdate: string;
+  item: string;
+  amount: number;
+  currency: string;
+  base_currency: string;
+  fx_rate: number;
+  active: boolean;
+  trx_type: 'CASH' | 'STOCK' | 'CRYPTO';
+}
+
+export const saveBalanceItem = async (payload: BalancePayload): Promise<void> => {
+  if (!API_KEY) {
+    throw new Error('API Key is missing');
+  }
+
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
+        'apikey': API_KEY
+      },
+      body: JSON.stringify({ balance: payload })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to save balance: ${response.status} - ${errorText}`);
+    }
+  } catch (error) {
+    console.error('Error saving balance item:', error);
+    throw error;
+  }
+};

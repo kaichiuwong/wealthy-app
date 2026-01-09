@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { ApiResponse, ChartDataPoint } from './types';
 import { fetchWealthData } from './services/api';
 import { parseDateKey, formatDateDisplay } from './utils';
@@ -14,41 +14,42 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<'dashboard' | 'transactions'>('dashboard');
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const apiResponse = await fetchWealthData();
-        setData(apiResponse);
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const apiResponse = await fetchWealthData();
+      setData(apiResponse);
 
-        // Transform data for charts
-        const transformedData: ChartDataPoint[] = Object.entries(apiResponse.balances)
-          .map(([key, value]) => {
-            const date = parseDateKey(key);
-            return {
-              month: key,
-              displayDate: formatDateDisplay(date),
-              rawDate: date,
-              total: value.summary.total,
-              cash: value.summary.breakdown.CASH.total,
-              stock: value.summary.breakdown.STOCK.total,
-              crypto: value.summary.breakdown.CRYPTO.total,
-            };
-          })
-          .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
+      // Transform data for charts
+      const transformedData: ChartDataPoint[] = Object.entries(apiResponse.balances)
+        .map(([key, value]) => {
+          const date = parseDateKey(key);
+          return {
+            month: key,
+            displayDate: formatDateDisplay(date),
+            rawDate: date,
+            total: value.summary.total,
+            cash: value.summary.breakdown.CASH.total,
+            stock: value.summary.breakdown.STOCK.total,
+            crypto: value.summary.breakdown.CRYPTO.total,
+          };
+        })
+        .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
 
-        setChartData(transformedData);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
+      setChartData(transformedData);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load data');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  if (loading) {
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  if (loading && !data) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-slate-950 text-white">
         <div className="flex flex-col items-center gap-4">
@@ -59,14 +60,14 @@ const App: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error && !data) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-slate-950 text-white">
         <div className="rounded-lg border border-red-900 bg-red-950/30 p-8 text-center">
             <h2 className="mb-2 text-xl font-bold text-red-500">Unable to Connect</h2>
             <p className="text-slate-400">{error}</p>
             <button 
-                onClick={() => window.location.reload()}
+                onClick={() => loadData()}
                 className="mt-6 rounded-md bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700"
             >
                 Retry
@@ -85,7 +86,7 @@ const App: React.FC = () => {
       {currentView === 'dashboard' ? (
         <Dashboard data={data} chartData={chartData} />
       ) : (
-        <Transactions data={data} />
+        <Transactions data={data} onRefresh={loadData} />
       )}
     </div>
   );

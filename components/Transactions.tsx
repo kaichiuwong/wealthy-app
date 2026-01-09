@@ -1,17 +1,42 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Loader2, X } from 'lucide-react';
 import { ApiResponse } from '../types';
 import { parseDateKey, formatDateDisplay } from '../utils';
+import { saveBalanceItem, BalancePayload } from '../services/api';
 
 interface TransactionsProps {
   data: ApiResponse;
+  onRefresh?: () => void;
 }
 
-const Transactions: React.FC<TransactionsProps> = ({ data }) => {
+interface FormState {
+  date: string;
+  bankAud: string;
+  bankHkd: string;
+  ibkrAud: string;
+  btc: string;
+  xrp: string;
+  eth: string;
+}
+
+const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
   const [showCashDetails, setShowCashDetails] = useState(false);
   const [showStockDetails, setShowStockDetails] = useState(false);
   const [showCryptoDetails, setShowCryptoDetails] = useState(false);
   
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<FormState>({
+    date: new Date().toISOString().split('T')[0],
+    bankAud: '',
+    bankHkd: '',
+    ibkrAud: '',
+    btc: '',
+    xrp: '',
+    eth: ''
+  });
+
   const sortedMonths = Object.keys(data.balances).sort().reverse();
 
   const getAmount = (monthKey: string, item: string, currency?: string) => {
@@ -45,11 +70,117 @@ const Transactions: React.FC<TransactionsProps> = ({ data }) => {
 
   const formatPercent = (val: number) => `${val.toFixed(1)}%`;
 
+  // --- Transaction Logic ---
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const fetchFxRates = async (): Promise<Record<string, number>> => {
+    const rates: Record<string, number> = {
+      AUD: 1,
+      HKD: 0.20, // Fallback
+      BTC: 150000, // Fallback
+      ETH: 4000, // Fallback
+      XRP: 4.0 // Fallback
+    };
+
+    try {
+        // Try to fetch crypto rates
+        const cryptoRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,ripple&vs_currencies=aud');
+        if (cryptoRes.ok) {
+            const cryptoData = await cryptoRes.json();
+            if (cryptoData.bitcoin?.aud) rates.BTC = cryptoData.bitcoin.aud;
+            if (cryptoData.ethereum?.aud) rates.ETH = cryptoData.ethereum.aud;
+            if (cryptoData.ripple?.aud) rates.XRP = cryptoData.ripple.aud;
+        }
+
+        // Try to fetch Fiat rates (HKD -> AUD)
+        // Using open.er-api.com which is free and requires no key
+        const fiatRes = await fetch('https://open.er-api.com/v6/latest/HKD');
+        if (fiatRes.ok) {
+            const fiatData = await fiatRes.json();
+            if (fiatData.rates?.AUD) rates.HKD = fiatData.rates.AUD;
+        }
+    } catch (e) {
+        console.warn('Failed to fetch live rates, using fallbacks', e);
+    }
+    return rates;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+        const rates = await fetchFxRates();
+        const promises: Promise<void>[] = [];
+
+        // Helper to push requests
+        const pushRequest = (amountStr: string, item: string, currency: string, type: 'CASH' | 'STOCK' | 'CRYPTO', manualRate?: number) => {
+            const amount = parseFloat(amountStr);
+            if (!isNaN(amount) && amount > 0) {
+                const rate = manualRate || rates[currency] || 1;
+                const payload: BalancePayload = {
+                    inputdate: formData.date,
+                    item,
+                    amount,
+                    currency,
+                    base_currency: 'AUD',
+                    fx_rate: rate,
+                    active: true,
+                    trx_type: type
+                };
+                promises.push(saveBalanceItem(payload));
+            }
+        };
+
+        pushRequest(formData.bankAud, 'BANK', 'AUD', 'CASH', 1);
+        pushRequest(formData.bankHkd, 'BANK', 'HKD', 'CASH');
+        pushRequest(formData.ibkrAud, 'IBKR', 'AUD', 'STOCK', 1);
+        pushRequest(formData.btc, 'BTC', 'BTC', 'CRYPTO');
+        pushRequest(formData.xrp, 'XRP', 'XRP', 'CRYPTO');
+        pushRequest(formData.eth, 'ETH', 'ETH', 'CRYPTO');
+
+        await Promise.all(promises);
+
+        setIsModalOpen(false);
+        setFormData({
+            date: new Date().toISOString().split('T')[0],
+            bankAud: '',
+            bankHkd: '',
+            ibkrAud: '',
+            btc: '',
+            xrp: '',
+            eth: ''
+        });
+        
+        if (onRefresh) {
+            onRefresh();
+        }
+    } catch (error) {
+        alert('Failed to save transactions. Check console for details.');
+        console.error(error);
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="p-4 sm:ml-64 sm:p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Transactions History</h1>
-        <p className="text-slate-400">Monthly breakdown of asset balances and portfolio performance.</p>
+      <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div>
+            <h1 className="text-2xl font-bold text-white">Transactions History</h1>
+            <p className="text-slate-400">Monthly breakdown of asset balances and portfolio performance.</p>
+        </div>
+        <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-900/20"
+        >
+            <Plus size={16} />
+            Add Transaction
+        </button>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-xl">
@@ -228,6 +359,101 @@ const Transactions: React.FC<TransactionsProps> = ({ data }) => {
           </table>
         </div>
       </div>
+
+      {/* Add Transaction Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-2xl">
+            <div className="mb-6 flex items-center justify-between border-b border-slate-800 pb-4">
+              <h2 className="text-xl font-bold text-white">Add Transactions</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-400">Date</label>
+                <input 
+                  type="date" 
+                  name="date"
+                  required
+                  value={formData.date}
+                  onChange={handleInputChange}
+                  className="w-full rounded-lg border border-slate-800 bg-slate-900 p-3 text-white outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {/* CASH */}
+                <div className="space-y-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                   <h3 className="flex items-center gap-2 font-semibold text-emerald-400">
+                      CASH
+                   </h3>
+                   <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-500">Bank (AUD)</label>
+                      <input type="number" step="0.01" name="bankAud" value={formData.bankAud} onChange={handleInputChange} placeholder="0.00" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-emerald-500" />
+                   </div>
+                   <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-500">Bank (HKD)</label>
+                      <input type="number" step="0.01" name="bankHkd" value={formData.bankHkd} onChange={handleInputChange} placeholder="0.00" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-emerald-500" />
+                   </div>
+                </div>
+
+                {/* STOCK */}
+                <div className="space-y-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4">
+                   <h3 className="flex items-center gap-2 font-semibold text-indigo-400">
+                      STOCK
+                   </h3>
+                   <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-500">IBKR (AUD)</label>
+                      <input type="number" step="0.01" name="ibkrAud" value={formData.ibkrAud} onChange={handleInputChange} placeholder="0.00" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-indigo-500" />
+                   </div>
+                </div>
+
+                {/* CRYPTO */}
+                <div className="col-span-1 space-y-4 rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 md:col-span-2">
+                   <h3 className="flex items-center gap-2 font-semibold text-violet-400">
+                      CRYPTO
+                   </h3>
+                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <div>
+                            <label className="mb-1 block text-xs font-medium text-slate-500">BTC</label>
+                            <input type="number" step="0.00000001" name="btc" value={formData.btc} onChange={handleInputChange} placeholder="0.00000000" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-violet-500" />
+                        </div>
+                        <div>
+                            <label className="mb-1 block text-xs font-medium text-slate-500">ETH</label>
+                            <input type="number" step="0.00000001" name="eth" value={formData.eth} onChange={handleInputChange} placeholder="0.00000000" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-violet-500" />
+                        </div>
+                        <div>
+                            <label className="mb-1 block text-xs font-medium text-slate-500">XRP</label>
+                            <input type="number" step="0.000001" name="xrp" value={formData.xrp} onChange={handleInputChange} placeholder="0.000000" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-violet-500" />
+                        </div>
+                   </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4">
+                <button 
+                  type="button" 
+                  onClick={() => setIsModalOpen(false)}
+                  className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+                >
+                  {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+                  {isSubmitting ? 'Saving...' : 'Save Transactions'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
