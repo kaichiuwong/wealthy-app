@@ -23,15 +23,15 @@ export const hasRegisteredPasskey = (): boolean => {
   return !!localStorage.getItem(STORAGE_KEY);
 };
 
-export const registerLocalPasskey = async (): Promise<boolean> => {
+export const registerLocalPasskey = async (email: string): Promise<boolean> => {
   try {
     // Generate random challenge (mock server challenge)
     const challenge = new Uint8Array(32);
     window.crypto.getRandomValues(challenge);
 
-    // Generate random user ID
-    const userId = new Uint8Array(16);
-    window.crypto.getRandomValues(userId);
+    // Generate user ID based on email (simple buffer creation)
+    const encoder = new TextEncoder();
+    const userId = encoder.encode(email);
 
     const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
       challenge,
@@ -41,8 +41,8 @@ export const registerLocalPasskey = async (): Promise<boolean> => {
       },
       user: {
         id: userId,
-        name: 'user@wealthy.app',
-        displayName: 'Wealthy Owner',
+        name: email,
+        displayName: email.split('@')[0],
       },
       pubKeyCredParams: [
         { alg: -7, type: 'public-key' }, // ES256
