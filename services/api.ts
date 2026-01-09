@@ -67,3 +67,28 @@ export const saveBalanceItem = async (payload: BalancePayload): Promise<void> =>
     throw error;
   }
 };
+
+export const deleteMonthBalance = async (month: string): Promise<void> => {
+  if (!API_KEY) {
+    throw new Error('API Key is missing');
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/month/${month}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
+        'apikey': API_KEY
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to delete month data: ${response.status} - ${errorText}`);
+    }
+  } catch (error) {
+    console.error('Error deleting month data:', error);
+    throw error;
+  }
+};

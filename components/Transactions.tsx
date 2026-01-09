@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronRight, Plus, Loader2, X, History } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Loader2, X, History, Trash2 } from 'lucide-react';
 import { ApiResponse } from '../types';
 import { parseDateKey, formatDateDisplay } from '../utils';
-import { saveBalanceItem, BalancePayload } from '../services/api';
+import { saveBalanceItem, deleteMonthBalance, BalancePayload } from '../services/api';
 
 interface TransactionsProps {
   data: ApiResponse;
@@ -27,6 +27,10 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Deletion State
+  const [deletingMonth, setDeletingMonth] = useState<string | null>(null);
+
   const [formData, setFormData] = useState<FormState>({
     date: new Date().toISOString().split('T')[0],
     bankAud: '',
@@ -187,6 +191,25 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
     }
   }, [isModalOpen, formData.date, fetchFxRates]);
 
+  const handleDelete = async (monthKey: string) => {
+    if (!confirm(`Are you sure you want to delete all transactions for ${monthKey}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setDeletingMonth(monthKey);
+      await deleteMonthBalance(monthKey);
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error) {
+      alert('Failed to delete transactions. Please try again.');
+      console.error(error);
+    } finally {
+      setDeletingMonth(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -319,6 +342,9 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                     )}
                   </div>
                 </th>
+                <th rowSpan={2} className="border-b border-l border-slate-800 px-4 py-4 text-center text-slate-400 bg-slate-950">
+                  
+                </th>
               </tr>
               <tr>
                 {/* CASH Subcolumns */}
@@ -361,9 +387,10 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                 const cash = summary.breakdown.CASH;
                 const stock = summary.breakdown.STOCK;
                 const crypto = summary.breakdown.CRYPTO;
+                const isDeleting = deletingMonth === monthKey;
 
                 return (
-                  <tr key={monthKey} className="hover:bg-slate-800/30 transition-colors">
+                  <tr key={monthKey} className="hover:bg-slate-800/30 transition-colors group">
                     <td className="sticky left-0 bg-slate-900 px-6 py-4 text-left font-medium text-white border-r border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]">
                       {formatDateDisplay(date)}
                     </td>
@@ -432,6 +459,18 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                         </td>
                       </>
                     )}
+
+                    {/* Actions */}
+                    <td className="px-4 py-4 border-l border-slate-800 text-center">
+                       <button
+                         onClick={() => handleDelete(monthKey)}
+                         disabled={isDeleting}
+                         className="p-1.5 rounded-lg text-slate-500 hover:bg-rose-500/10 hover:text-rose-500 transition-colors disabled:opacity-50"
+                         title="Delete Transactions"
+                       >
+                         {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                       </button>
+                    </td>
                   </tr>
                 );
               })}
