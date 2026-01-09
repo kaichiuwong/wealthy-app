@@ -1,6 +1,6 @@
 import React from 'react';
 import { ApiResponse } from '../types';
-import { parseDateKey, formatDateDisplay, formatCurrency } from '../utils';
+import { parseDateKey, formatDateDisplay } from '../utils';
 
 interface TransactionsProps {
   data: ApiResponse;
@@ -21,50 +21,74 @@ const Transactions: React.FC<TransactionsProps> = ({ data }) => {
     return entry ? entry.amount : 0;
   };
 
-  const formatCrypto = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 4,
+  const formatFiat = (amount: number, currency: string) => {
+    return new Intl.NumberFormat('en-AU', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
+
+  const formatCrypto = (amount: number, coin: string) => {
+    const decimals = (coin === 'BTC' || coin === 'ETH') ? 8 : 4;
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(amount);
+  };
+
+  const formatPercent = (val: number) => `${val.toFixed(1)}%`;
 
   return (
     <div className="p-4 sm:ml-64 sm:p-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white">Transactions History</h1>
-        <p className="text-slate-400">Monthly breakdown of asset balances across all portfolios.</p>
+        <p className="text-slate-400">Monthly breakdown of asset balances and portfolio performance.</p>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-xl">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-400">
+          <table className="w-full text-right text-sm text-slate-400 whitespace-nowrap">
             <thead className="bg-slate-950 text-xs uppercase text-slate-300">
               <tr>
-                <th rowSpan={2} className="border-b border-slate-800 px-6 py-4 text-left font-semibold text-white sticky left-0 bg-slate-950 z-10">
+                <th rowSpan={2} className="border-b border-slate-800 px-6 py-4 text-left font-semibold text-white sticky left-0 bg-slate-950 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
                   Month
                 </th>
-                <th colSpan={2} className="border-b border-l border-slate-800 px-4 py-2 text-center text-emerald-500 font-bold bg-slate-950/50">
+                <th rowSpan={2} className="border-b border-l border-slate-800 px-4 py-4 text-emerald-400 font-bold bg-slate-950">
+                  Net Worth
+                </th>
+                {/* CASH Header - Increased colspan to 4 */}
+                <th colSpan={4} className="border-b border-l border-slate-800 px-4 py-2 text-center text-emerald-500 font-bold bg-slate-950/50">
                   CASH
                 </th>
-                <th colSpan={3} className="border-b border-l border-slate-800 px-4 py-2 text-center text-indigo-500 font-bold bg-slate-950/50">
+                {/* STOCK Header - Increased colspan to 5 */}
+                <th colSpan={5} className="border-b border-l border-slate-800 px-4 py-2 text-center text-indigo-500 font-bold bg-slate-950/50">
                   STOCK
                 </th>
-                <th colSpan={3} className="border-b border-l border-slate-800 px-4 py-2 text-center text-violet-500 font-bold bg-slate-950/50">
+                {/* CRYPTO Header - Increased colspan to 5 */}
+                <th colSpan={5} className="border-b border-l border-slate-800 px-4 py-2 text-center text-violet-500 font-bold bg-slate-950/50">
                   CRYPTO
                 </th>
               </tr>
               <tr>
-                {/* Cash Subcolumns */}
-                <th className="border-b border-l border-slate-800 px-4 py-3 bg-slate-950/30">HKD</th>
+                {/* CASH Subcolumns */}
+                <th className="border-b border-l border-slate-800 px-4 py-3 text-slate-200 font-semibold bg-slate-950/40">Total</th>
+                <th className="border-b border-slate-800 px-4 py-3 text-slate-400 bg-slate-950/40">%</th>
+                <th className="border-b border-l border-slate-800/50 px-4 py-3 bg-slate-950/30">HKD</th>
                 <th className="border-b border-slate-800 px-4 py-3 bg-slate-950/30">AUD</th>
                 
-                {/* Stock Subcolumns */}
-                <th className="border-b border-l border-slate-800 px-4 py-3 bg-slate-950/30">IBKR</th>
+                {/* STOCK Subcolumns */}
+                <th className="border-b border-l border-slate-800 px-4 py-3 text-slate-200 font-semibold bg-slate-950/40">Total</th>
+                <th className="border-b border-slate-800 px-4 py-3 text-slate-400 bg-slate-950/40">%</th>
+                <th className="border-b border-l border-slate-800/50 px-4 py-3 bg-slate-950/30">IBKR</th>
                 <th className="border-b border-slate-800 px-4 py-3 bg-slate-950/30">STAKE (AUD)</th>
                 <th className="border-b border-slate-800 px-4 py-3 bg-slate-950/30">STAKE (USD)</th>
                 
-                {/* Crypto Subcolumns */}
-                <th className="border-b border-l border-slate-800 px-4 py-3 bg-slate-950/30">BTC</th>
+                {/* CRYPTO Subcolumns */}
+                <th className="border-b border-l border-slate-800 px-4 py-3 text-slate-200 font-semibold bg-slate-950/40">Total</th>
+                <th className="border-b border-slate-800 px-4 py-3 text-slate-400 bg-slate-950/40">%</th>
+                <th className="border-b border-l border-slate-800/50 px-4 py-3 bg-slate-950/30">BTC</th>
                 <th className="border-b border-slate-800 px-4 py-3 bg-slate-950/30">XRP</th>
                 <th className="border-b border-slate-800 px-4 py-3 bg-slate-950/30">ETH</th>
               </tr>
@@ -72,40 +96,68 @@ const Transactions: React.FC<TransactionsProps> = ({ data }) => {
             <tbody className="divide-y divide-slate-800/50">
               {sortedMonths.map((monthKey) => {
                 const date = parseDateKey(monthKey);
+                const summary = data.balances[monthKey].summary;
+                const cash = summary.breakdown.CASH;
+                const stock = summary.breakdown.STOCK;
+                const crypto = summary.breakdown.CRYPTO;
+
                 return (
                   <tr key={monthKey} className="hover:bg-slate-800/30 transition-colors">
                     <td className="sticky left-0 bg-slate-900 px-6 py-4 text-left font-medium text-white border-r border-slate-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]">
                       {formatDateDisplay(date)}
                     </td>
                     
-                    {/* CASH */}
-                    <td className="px-4 py-4 text-slate-300 border-l border-slate-800/50">
-                      {formatCurrency(getAmount(monthKey, 'BANK', 'HKD'), 'HKD')}
-                    </td>
-                    <td className="px-4 py-4 text-slate-300">
-                      {formatCurrency(getAmount(monthKey, 'BANK', 'AUD'), 'AUD')}
+                    {/* Net Worth */}
+                    <td className="px-4 py-4 text-emerald-400 font-bold border-l border-slate-800 bg-slate-900/20">
+                      {formatFiat(summary.total, 'AUD')}
                     </td>
 
-                    {/* STOCK */}
+                    {/* CASH Group */}
+                    <td className="px-4 py-4 font-semibold text-slate-200 border-l border-slate-800 bg-slate-900/10">
+                      {formatFiat(cash.total, 'AUD')}
+                    </td>
+                    <td className="px-4 py-4 text-xs text-slate-500 bg-slate-900/10">
+                      {formatPercent(cash.percentage)}
+                    </td>
                     <td className="px-4 py-4 text-slate-300 border-l border-slate-800/50">
-                      {formatCurrency(getAmount(monthKey, 'IBKR'), 'AUD')}
+                      {formatFiat(getAmount(monthKey, 'BANK', 'HKD'), 'HKD')}
                     </td>
                     <td className="px-4 py-4 text-slate-300">
-                      {formatCurrency(getAmount(monthKey, 'STAKE', 'AUD'), 'AUD')}
-                    </td>
-                    <td className="px-4 py-4 text-slate-300">
-                      {formatCurrency(getAmount(monthKey, 'STAKE', 'USD'), 'USD')}
+                      {formatFiat(getAmount(monthKey, 'BANK', 'AUD'), 'AUD')}
                     </td>
 
-                    {/* CRYPTO */}
+                    {/* STOCK Group */}
+                    <td className="px-4 py-4 font-semibold text-slate-200 border-l border-slate-800 bg-slate-900/10">
+                      {formatFiat(stock.total, 'AUD')}
+                    </td>
+                    <td className="px-4 py-4 text-xs text-slate-500 bg-slate-900/10">
+                      {formatPercent(stock.percentage)}
+                    </td>
+                    <td className="px-4 py-4 text-slate-300 border-l border-slate-800/50">
+                      {formatFiat(getAmount(monthKey, 'IBKR'), 'AUD')}
+                    </td>
+                    <td className="px-4 py-4 text-slate-300">
+                      {formatFiat(getAmount(monthKey, 'STAKE', 'AUD'), 'AUD')}
+                    </td>
+                    <td className="px-4 py-4 text-slate-300">
+                      {formatFiat(getAmount(monthKey, 'STAKE', 'USD'), 'USD')}
+                    </td>
+
+                    {/* CRYPTO Group */}
+                    <td className="px-4 py-4 font-semibold text-slate-200 border-l border-slate-800 bg-slate-900/10">
+                      {formatFiat(crypto.total, 'AUD')}
+                    </td>
+                    <td className="px-4 py-4 text-xs text-slate-500 bg-slate-900/10">
+                      {formatPercent(crypto.percentage)}
+                    </td>
                     <td className="px-4 py-4 font-mono text-slate-300 border-l border-slate-800/50">
-                      {formatCrypto(getAmount(monthKey, 'BTC'))}
+                      {formatCrypto(getAmount(monthKey, 'BTC'), 'BTC')}
                     </td>
                     <td className="px-4 py-4 font-mono text-slate-300">
-                      {formatCrypto(getAmount(monthKey, 'XRP'))}
+                      {formatCrypto(getAmount(monthKey, 'XRP'), 'XRP')}
                     </td>
                     <td className="px-4 py-4 font-mono text-slate-300">
-                      {formatCrypto(getAmount(monthKey, 'ETH'))}
+                      {formatCrypto(getAmount(monthKey, 'ETH'), 'ETH')}
                     </td>
                   </tr>
                 );
