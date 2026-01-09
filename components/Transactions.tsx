@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronRight, Plus, Loader2, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Loader2, X, History } from 'lucide-react';
 import { ApiResponse } from '../types';
 import { parseDateKey, formatDateDisplay } from '../utils';
 import { saveBalanceItem, BalancePayload } from '../services/api';
@@ -79,6 +79,17 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAutoFill = (field: 'btc' | 'eth' | 'xrp', item: 'BTC' | 'ETH' | 'XRP') => {
+    for (const month of sortedMonths) {
+      const monthData = data.balances[month];
+      const entry = monthData.balances.find(b => b.item === item && b.trx_type === 'CRYPTO');
+      if (entry) {
+         setFormData(prev => ({ ...prev, [field]: entry.amount.toString() }));
+         return;
+      }
+    }
   };
 
   const fetchFxRates = useCallback(async (dateStr: string): Promise<Record<string, number>> => {
@@ -500,21 +511,54 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                    </div>
                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                         <div>
-                            <label className="mb-1 block text-xs font-medium text-slate-500">BTC</label>
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="block text-xs font-medium text-slate-500">BTC</label>
+                                <button 
+                                    type="button"
+                                    onClick={() => handleAutoFill('btc', 'BTC')}
+                                    className="flex items-center gap-1 text-[10px] text-violet-400 hover:text-violet-300 transition-colors"
+                                    title="Use amount from last month"
+                                >
+                                    <History size={10} />
+                                    <span>Last</span>
+                                </button>
+                            </div>
                             <input type="number" step="0.00000001" name="btc" value={formData.btc} onChange={handleInputChange} placeholder="0.00000000" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-violet-500" />
                             <div className="mt-1 text-xs text-slate-500">
                                {loadingRates ? 'Fetching rate...' : `Rate: ${currentRates.BTC?.toFixed(2) ?? '-'} AUD`}
                             </div>
                         </div>
                         <div>
-                            <label className="mb-1 block text-xs font-medium text-slate-500">ETH</label>
+                             <div className="flex items-center justify-between mb-1">
+                                <label className="block text-xs font-medium text-slate-500">ETH</label>
+                                <button 
+                                    type="button"
+                                    onClick={() => handleAutoFill('eth', 'ETH')}
+                                    className="flex items-center gap-1 text-[10px] text-violet-400 hover:text-violet-300 transition-colors"
+                                    title="Use amount from last month"
+                                >
+                                    <History size={10} />
+                                    <span>Last</span>
+                                </button>
+                            </div>
                             <input type="number" step="0.00000001" name="eth" value={formData.eth} onChange={handleInputChange} placeholder="0.00000000" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-violet-500" />
                             <div className="mt-1 text-xs text-slate-500">
                                {loadingRates ? 'Fetching rate...' : `Rate: ${currentRates.ETH?.toFixed(2) ?? '-'} AUD`}
                             </div>
                         </div>
                         <div>
-                            <label className="mb-1 block text-xs font-medium text-slate-500">XRP</label>
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="block text-xs font-medium text-slate-500">XRP</label>
+                                <button 
+                                    type="button"
+                                    onClick={() => handleAutoFill('xrp', 'XRP')}
+                                    className="flex items-center gap-1 text-[10px] text-violet-400 hover:text-violet-300 transition-colors"
+                                    title="Use amount from last month"
+                                >
+                                    <History size={10} />
+                                    <span>Last</span>
+                                </button>
+                            </div>
                             <input type="number" step="0.000001" name="xrp" value={formData.xrp} onChange={handleInputChange} placeholder="0.000000" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-violet-500" />
                             <div className="mt-1 text-xs text-slate-500">
                                {loadingRates ? 'Fetching rate...' : `Rate: ${currentRates.XRP?.toFixed(4) ?? '-'} AUD`}
