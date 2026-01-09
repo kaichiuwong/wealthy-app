@@ -90,6 +90,9 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
       XRP: 4.0 // Fallback
     };
 
+    const coingeckoApiKey = import.meta.env.VITE_COINGECKO_API_KEY || '';
+    const authParam = coingeckoApiKey ? `&x_cg_demo_api_key=${coingeckoApiKey}` : '';
+
     const today = new Date().toISOString().split('T')[0];
     const isToday = dateStr === today;
 
@@ -112,7 +115,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
     try {
         if (isToday) {
             // Single API call for all crypto to avoid 429
-            const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,ripple&vs_currencies=aud');
+            const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,ripple&vs_currencies=aud${authParam}`);
             if (res.ok) {
                 const data = await res.json();
                 if (data.bitcoin?.aud) rates.BTC = data.bitcoin.aud;
@@ -137,7 +140,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                     if (coins.indexOf(coin) > 0) {
                         await new Promise(r => setTimeout(r, 250));
                     }
-                    const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coin.id}/history?date=${coingeckoDate}&localization=false`);
+                    const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coin.id}/history?date=${coingeckoDate}&localization=false${authParam}`);
                     if (res.ok) {
                         const data = await res.json();
                         if (data.market_data?.current_price?.aud) {
