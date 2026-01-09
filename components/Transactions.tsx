@@ -212,6 +212,38 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation
+    const errors: string[] = [];
+
+    const bankAudVal = parseFloat(formData.bankAud);
+    if (!formData.bankAud || isNaN(bankAudVal) || bankAudVal <= 0) {
+      errors.push("Bank (AUD) is required and must be greater than 0");
+    }
+
+    const bankHkdVal = parseFloat(formData.bankHkd);
+    if (!formData.bankHkd || isNaN(bankHkdVal) || bankHkdVal <= 0) {
+      errors.push("Bank (HKD) is required and must be greater than 0");
+    }
+
+    const ibkrAudVal = parseFloat(formData.ibkrAud);
+    if (!formData.ibkrAud || isNaN(ibkrAudVal) || ibkrAudVal <= 0) {
+      errors.push("IBKR (AUD) is required and must be greater than 0");
+    }
+
+    const btcVal = parseFloat(formData.btc || '0');
+    const ethVal = parseFloat(formData.eth || '0');
+    const xrpVal = parseFloat(formData.xrp || '0');
+
+    if (btcVal <= 0 && ethVal <= 0 && xrpVal <= 0) {
+      errors.push("At least one Crypto asset (BTC, ETH, or XRP) must have a value greater than 0");
+    }
+
+    if (errors.length > 0) {
+      alert(errors.join('\n'));
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -510,11 +542,11 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                       CASH
                    </h3>
                    <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-500">Bank (AUD)</label>
+                      <label className="mb-1 block text-xs font-medium text-slate-500">Bank (AUD) <span className="text-rose-500">*</span></label>
                       <input type="number" step="0.01" name="bankAud" value={formData.bankAud} onChange={handleInputChange} placeholder="0.00" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-emerald-500" />
                    </div>
                    <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-500">Bank (HKD)</label>
+                      <label className="mb-1 block text-xs font-medium text-slate-500">Bank (HKD) <span className="text-rose-500">*</span></label>
                       <input type="number" step="0.01" name="bankHkd" value={formData.bankHkd} onChange={handleInputChange} placeholder="0.00" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-emerald-500" />
                       <div className="mt-1 text-xs text-slate-500">
                          {loadingRates ? 'Fetching rate...' : `Rate: ${currentRates.HKD?.toFixed(4) ?? '-'} AUD`}
@@ -528,7 +560,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                       STOCK
                    </h3>
                    <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-500">IBKR (AUD)</label>
+                      <label className="mb-1 block text-xs font-medium text-slate-500">IBKR (AUD) <span className="text-rose-500">*</span></label>
                       <input type="number" step="0.01" name="ibkrAud" value={formData.ibkrAud} onChange={handleInputChange} placeholder="0.00" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-indigo-500" />
                    </div>
                 </div>
@@ -537,7 +569,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                 <div className="col-span-1 space-y-4 rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 md:col-span-2">
                    <div className="flex items-center justify-between">
                        <h3 className="flex items-center gap-2 font-semibold text-violet-400">
-                          CRYPTO
+                          CRYPTO <span className="text-xs font-normal text-slate-500">(At least one required)</span>
                        </h3>
                        <a 
                          href="https://www.coingecko.com" 
