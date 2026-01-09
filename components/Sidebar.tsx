@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, PieChart, Wallet, Settings, LogOut, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Wallet, LogOut, TrendingUp } from 'lucide-react';
 
 interface SidebarProps {
   currentView: 'dashboard' | 'transactions';
@@ -37,12 +37,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
             </button>
           </li>
           <li>
-            <a href="#" className="flex items-center rounded-lg p-3 text-slate-400 hover:bg-slate-800 hover:text-white group">
-              <PieChart className="h-5 w-5 transition duration-75 group-hover:text-white" />
-              <span className="ml-3">Analytics</span>
-            </a>
-          </li>
-          <li>
             <button 
               onClick={() => onNavigate('transactions')}
               className={getLinkClass('transactions')}
@@ -55,12 +49,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
         
         <div className="mt-auto">
           <ul className="space-y-2 font-medium border-t border-slate-800 pt-4">
-            <li>
-              <a href="#" className="flex items-center rounded-lg p-3 text-slate-400 hover:bg-slate-800 hover:text-white group">
-                <Settings className="h-5 w-5 transition duration-75 group-hover:text-white" />
-                <span className="ml-3">Settings</span>
-              </a>
-            </li>
             <li>
               <a href="#" className="flex items-center rounded-lg p-3 text-slate-400 hover:bg-slate-800 hover:text-white group">
                 <LogOut className="h-5 w-5 transition duration-75 group-hover:text-white" />
