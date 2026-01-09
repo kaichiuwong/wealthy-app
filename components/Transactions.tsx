@@ -94,11 +94,11 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
     const authParam = coingeckoApiKey ? `&x_cg_demo_api_key=${coingeckoApiKey}` : '';
 
     const today = new Date().toISOString().split('T')[0];
-    const isToday = dateStr === today;
+    const isCurrentOrFuture = dateStr >= today;
 
     // 1. Fiat (HKD) - Frankfurter
     try {
-        const url = isToday 
+        const url = isCurrentOrFuture 
             ? 'https://api.frankfurter.app/latest?from=HKD&to=AUD'
             : `https://api.frankfurter.app/${dateStr}?from=HKD&to=AUD`;
             
@@ -113,7 +113,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
 
     // 2. Crypto (BTC, ETH, XRP) - CoinGecko
     try {
-        if (isToday) {
+        if (isCurrentOrFuture) {
             // Single API call for all crypto to avoid 429
             const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,ripple&vs_currencies=aud${authParam}`);
             if (res.ok) {
