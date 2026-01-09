@@ -4,9 +4,10 @@ import { LayoutDashboard, Wallet, LogOut, TrendingUp } from 'lucide-react';
 interface SidebarProps {
   currentView: 'dashboard' | 'transactions';
   onNavigate: (view: 'dashboard' | 'transactions') => void;
+  onLogout?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onLogout }) => {
   const getLinkClass = (view: 'dashboard' | 'transactions') => {
     const isActive = currentView === view;
     return `flex w-full items-center rounded-lg p-3 transition duration-75 group ${
@@ -14,6 +15,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
         ? 'bg-slate-800 text-white' 
         : 'text-slate-400 hover:bg-slate-800 hover:text-white'
     }`;
+  };
+
+  const handleLogoutClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onLogout) {
+      onLogout();
+    } else {
+      // Fallback if no prop provided (e.g. forced reload to clear state)
+      window.location.reload();
+    }
   };
 
   return (
@@ -50,10 +61,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
         <div className="mt-auto">
           <ul className="space-y-2 font-medium border-t border-slate-800 pt-4">
             <li>
-              <a href="#" className="flex items-center rounded-lg p-3 text-slate-400 hover:bg-slate-800 hover:text-white group">
+              <button onClick={handleLogoutClick} className="flex w-full items-center rounded-lg p-3 text-slate-400 hover:bg-slate-800 hover:text-white group">
                 <LogOut className="h-5 w-5 transition duration-75 group-hover:text-white" />
                 <span className="ml-3">Sign Out</span>
-              </a>
+              </button>
             </li>
           </ul>
         </div>

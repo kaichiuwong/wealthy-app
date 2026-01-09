@@ -46,3 +46,15 @@ export interface ChartDataPoint {
 }
 
 export type AssetType = 'CASH' | 'STOCK' | 'CRYPTO';
+
+// Global declarations for Vite environment variables
+declare global {
+  interface ImportMetaEnv {
+    readonly VITE_API_KEY: string;
+    readonly VITE_COINGECKO_API_KEY: string;
+  }
+
+  interface ImportMeta {
+    readonly env: ImportMetaEnv;
+  }
+}

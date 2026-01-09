@@ -1,4 +1,3 @@
-/// <reference types="vite/client" />
 import { ApiResponse } from '../types';
 
 const API_URL = 'https://xktvegbahkomfyfzsnda.supabase.co/functions/v1/balance';

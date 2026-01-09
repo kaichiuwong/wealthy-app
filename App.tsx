@@ -5,9 +5,11 @@ import { parseDateKey, formatDateDisplay } from './utils';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Transactions from './components/Transactions';
+import Login from './components/Login';
 import { Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [data, setData] = useState<ApiResponse | null>(null);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -45,10 +47,25 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // Only load data once authenticated
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (isAuthenticated) {
+      loadData();
+    }
+  }, [isAuthenticated, loadData]);
 
+  // Handle Logout
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setData(null);
+  };
+
+  // If not authenticated, show Login Screen
+  if (!isAuthenticated) {
+    return <Login onSuccess={() => setIsAuthenticated(true)} />;
+  }
+
+  // Once authenticated, show Loading or App
   if (loading && !data) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-slate-950 text-white">
@@ -81,7 +98,11 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <Sidebar currentView={currentView} onNavigate={setCurrentView} />
+      <Sidebar 
+        currentView={currentView} 
+        onNavigate={setCurrentView}
+        onLogout={handleLogout}
+      />
       
       {currentView === 'dashboard' ? (
         <Dashboard data={data} chartData={chartData} />
