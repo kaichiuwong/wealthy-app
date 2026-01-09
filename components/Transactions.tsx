@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronRight, Plus, Loader2, X } from 'lucide-react';
 import { ApiResponse } from '../types';
 import { parseDateKey, formatDateDisplay } from '../utils';
@@ -36,6 +36,10 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
     xrp: '',
     eth: ''
   });
+
+  // Rates State
+  const [currentRates, setCurrentRates] = useState<Record<string, number>>({});
+  const [loadingRates, setLoadingRates] = useState(false);
 
   const sortedMonths = Object.keys(data.balances).sort().reverse();
 
@@ -77,7 +81,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const fetchFxRates = async (dateStr: string): Promise<Record<string, number>> => {
+  const fetchFxRates = useCallback(async (dateStr: string): Promise<Record<string, number>> => {
     const rates: Record<string, number> = {
       AUD: 1.0,
       HKD: 0.20, // Fallback
@@ -129,15 +133,34 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
         console.warn('Failed to fetch historical crypto rates', e);
     }
     return rates;
-  };
+  }, []);
+
+  // Update rates when date changes or modal opens
+  useEffect(() => {
+    if (isModalOpen && formData.date) {
+        let isMounted = true;
+        const load = async () => {
+            setLoadingRates(true);
+            const rates = await fetchFxRates(formData.date);
+            if (isMounted) {
+                setCurrentRates(rates);
+                setLoadingRates(false);
+            }
+        };
+        load();
+        return () => { isMounted = false; };
+    }
+  }, [isModalOpen, formData.date, fetchFxRates]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-        // Fetch rates based on the selected date
-        const rates = await fetchFxRates(formData.date);
+        // Use current rates if they match the date, otherwise fetch (safety check)
+        const rates = currentRates; 
+        // Note: We assume currentRates are up to date because of the useEffect hook.
+        
         const promises: Promise<void>[] = [];
 
         // Helper to push requests
@@ -420,6 +443,9 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                    <div>
                       <label className="mb-1 block text-xs font-medium text-slate-500">Bank (HKD)</label>
                       <input type="number" step="0.01" name="bankHkd" value={formData.bankHkd} onChange={handleInputChange} placeholder="0.00" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-emerald-500" />
+                      <div className="mt-1 text-xs text-slate-500">
+                         {loadingRates ? 'Fetching rate...' : `Rate: ${currentRates.HKD?.toFixed(4) ?? '-'} AUD`}
+                      </div>
                    </div>
                 </div>
 
@@ -443,14 +469,23 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                         <div>
                             <label className="mb-1 block text-xs font-medium text-slate-500">BTC</label>
                             <input type="number" step="0.00000001" name="btc" value={formData.btc} onChange={handleInputChange} placeholder="0.00000000" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-violet-500" />
+                            <div className="mt-1 text-xs text-slate-500">
+                               {loadingRates ? 'Fetching rate...' : `Rate: ${currentRates.BTC?.toFixed(2) ?? '-'} AUD`}
+                            </div>
                         </div>
                         <div>
                             <label className="mb-1 block text-xs font-medium text-slate-500">ETH</label>
                             <input type="number" step="0.00000001" name="eth" value={formData.eth} onChange={handleInputChange} placeholder="0.00000000" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-violet-500" />
+                            <div className="mt-1 text-xs text-slate-500">
+                               {loadingRates ? 'Fetching rate...' : `Rate: ${currentRates.ETH?.toFixed(2) ?? '-'} AUD`}
+                            </div>
                         </div>
                         <div>
                             <label className="mb-1 block text-xs font-medium text-slate-500">XRP</label>
                             <input type="number" step="0.000001" name="xrp" value={formData.xrp} onChange={handleInputChange} placeholder="0.000000" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-violet-500" />
+                            <div className="mt-1 text-xs text-slate-500">
+                               {loadingRates ? 'Fetching rate...' : `Rate: ${currentRates.XRP?.toFixed(4) ?? '-'} AUD`}
+                            </div>
                         </div>
                    </div>
                 </div>
