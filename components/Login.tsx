@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Fingerprint, Lock, ShieldCheck, Loader2, AlertCircle, ArrowRight, Mail } from 'lucide-react';
 import { hasRegisteredPasskey, registerLocalPasskey, authenticateLocalPasskey } from '../services/auth';
+import { checkUserEmail } from '../services/api';
 
 interface LoginProps {
   onSuccess: () => void;
@@ -18,7 +19,7 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
     setIsRegistered(hasRegisteredPasskey());
   }, []);
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     
@@ -27,19 +28,24 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
       return;
     }
 
-    // Get allowed emails from environment variable, split by semicolon, trim whitespace, and normalize to lowercase
-    const allowedEmailsEnv = import.meta.env.VITE_ALLOWED_EMAILS || '';
-    const allowedList = allowedEmailsEnv.split(';').map(e => e.trim().toLowerCase()).filter(e => e.length > 0);
+    setLoading(true);
+    try {
+      // Verify email via API instead of env vars
+      const isAuthorized = await checkUserEmail(email.trim());
+      
+      if (!isAuthorized) {
+        setError('Access Restricted: This email is not authorized.');
+        setLoading(false);
+        return;
+      }
 
-    // If no emails are configured in env, we might want to fail safe or allow none. 
-    // Assuming secure by default: if list is empty, no one can login.
-    
-    if (!allowedList.includes(email.toLowerCase().trim())) {
-      setError('Access Restricted: This email is not authorized.');
-      return;
+      setStep('auth');
+    } catch (err) {
+      console.error(err);
+      setError('Unable to verify email. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    setStep('auth');
   };
 
   const handleAction = async () => {
@@ -119,14 +125,25 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
                 placeholder="name@example.com"
                 className="w-full rounded-xl border border-slate-700 bg-slate-950/50 py-3 pl-10 pr-4 text-white placeholder-slate-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                 autoFocus
+                disabled={loading}
               />
             </div>
             <button
               type="submit"
-              className="group flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white transition-all hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-900/20"
+              disabled={loading}
+              className="group flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white transition-all hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-900/20 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              <span>Continue</span>
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin h-5 w-5" />
+                  <span>Verifying...</span>
+                </>
+              ) : (
+                <>
+                  <span>Continue</span>
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </>
+              )}
             </button>
           </form>
         ) : (

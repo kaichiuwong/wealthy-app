@@ -1,6 +1,7 @@
 import { ApiResponse } from '../types';
 
 const API_URL = 'https://xktvegbahkomfyfzsnda.supabase.co/functions/v1/balance';
+const CHECK_USER_URL = 'https://xktvegbahkomfyfzsnda.supabase.co/functions/v1/check-user-email';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 
 export const fetchWealthData = async (): Promise<ApiResponse> => {
@@ -27,6 +28,36 @@ export const fetchWealthData = async (): Promise<ApiResponse> => {
   } catch (error) {
     console.error('Error fetching wealth data:', error);
     throw error;
+  }
+};
+
+export const checkUserEmail = async (email: string): Promise<boolean> => {
+  if (!API_KEY) {
+    console.warn('API Key is missing');
+    return false;
+  }
+
+  try {
+    const response = await fetch(CHECK_USER_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
+        'apikey': API_KEY
+      },
+      body: JSON.stringify({ email })
+    });
+
+    if (!response.ok) {
+      // If the endpoint returns 404/500, we assume the user check failed or service is down
+      return false;
+    }
+
+    const data = await response.json();
+    return data.exists === true;
+  } catch (error) {
+    console.error('Error checking user email:', error);
+    return false;
   }
 };
 
