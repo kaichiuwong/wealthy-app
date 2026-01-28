@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Fingerprint, Lock, ShieldCheck, Loader2, AlertCircle, ArrowRight, Mail } from 'lucide-react';
-import { hasRegisteredPasskey, registerLocalPasskey, authenticateLocalPasskey } from '../services/auth';
+import { Loader2 } from 'lucide-react';
 import { checkUserEmail } from '../services/api';
 
 interface LoginProps {
@@ -8,178 +7,96 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onSuccess }) => {
-  const [step, setStep] = useState<'email' | 'auth'>('email');
-  const [email, setEmail] = useState('');
-  const [isRegistered, setIsRegistered] = useState(false);
+  const [email, setEmail] = useState(() => {
+    // Retrieve email from cookie on mount
+    const cookies = document.cookie.split('; ');
+    const emailCookie = cookies.find(c => c.startsWith('pa_email='));
+    return emailCookie ? decodeURIComponent(emailCookie.split('=')[1]) : '';
+  });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Check if device has a key, but we still force email entry for identity verification
-    setIsRegistered(hasRegisteredPasskey());
-  }, []);
+  const [error, setError] = useState('');
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setError('');
     
-    if (!email) {
+    if (!email.trim()) {
       setError('Please enter your email address.');
       return;
     }
 
     setLoading(true);
     try {
-      // Verify email via API instead of env vars
-      const isAuthorized = await checkUserEmail(email.trim());
+      const data = await checkUserEmail(email.trim());
       
-      if (!isAuthorized) {
-        setError('Access Restricted: This email is not authorized.');
-        setLoading(false);
-        return;
+      if (!data.exists || !data.user || !data.token) {
+        throw new Error(data.message || 'User not found or authentication failed');
       }
-
-      setStep('auth');
+      
+      // Store email in cookie for 30 days
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + 30);
+      document.cookie = `pa_email=${encodeURIComponent(email.trim())}; expires=${expiryDate.toUTCString()}; path=/; SameSite=Strict`;
+      
+      // Store auth token and user data
+      localStorage.setItem('pa_token', data.token);
+      localStorage.setItem('pa_email', email.trim());
+      localStorage.setItem('pa_user', JSON.stringify(data.user));
+      
+      onSuccess();
     } catch (err) {
-      console.error(err);
-      setError('Unable to verify email. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAction = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      if (isRegistered) {
-        // Login
-        const success = await authenticateLocalPasskey();
-        if (success) {
-          onSuccess();
-        }
-      } else {
-        // Register
-        const success = await registerLocalPasskey(email);
-        if (success) {
-          setIsRegistered(true);
-          onSuccess(); // Auto login after register
-        }
-      }
-    } catch (err: any) {
-      // Handle specific WebAuthn errors
-      if (err.name === 'NotAllowedError') {
-        setError('Request canceled or timed out.');
-      } else if (err.name === 'NotSupportedError') {
-        setError('Passkeys are not supported on this device/browser.');
-      } else {
-        setError('Authentication failed. Please try again.');
-      }
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-slate-950 px-4 text-center">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/50 p-8 shadow-2xl backdrop-blur-xl">
-        
-        <div className="mb-6 flex justify-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/10 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-            {step === 'auth' && isRegistered ? (
-              <Lock className="h-10 w-10 text-emerald-500" />
-            ) : (
-              <ShieldCheck className="h-10 w-10 text-emerald-500" />
-            )}
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-emerald-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-8 border border-slate-100 dark:border-slate-800">
+        <div className="flex justify-center mb-6">
+          <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center">
+            <span className="text-4xl">💰</span>
           </div>
         </div>
-
-        <h1 className="mb-2 text-2xl font-bold text-white">
-          {step === 'email' ? 'Welcome' : (isRegistered ? 'Welcome Back' : 'Secure Setup')}
-        </h1>
+        <h1 className="text-3xl font-bold text-center text-slate-800 dark:text-slate-100 mb-8">Wealthy App</h1>
         
-        <p className="mb-8 text-slate-400">
-          {step === 'email' 
-             ? 'Enter your authorized email to access the dashboard.'
-             : (isRegistered 
-                ? `Authenticate with your passkey for ${email}` 
-                : `Create a passkey to secure access for ${email}`)
-          }
-        </p>
-
         {error && (
-          <div className="mb-6 flex items-center justify-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-400">
-            <AlertCircle size={16} />
-            <span>{error}</span>
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
           </div>
         )}
-
-        {step === 'email' ? (
-          <form onSubmit={handleEmailSubmit} className="space-y-4">
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950/50 py-3 pl-10 pr-4 text-white placeholder-slate-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                autoFocus
-                disabled={loading}
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white transition-all hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-900/20 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin h-5 w-5" />
-                  <span>Verifying...</span>
-                </>
-              ) : (
-                <>
-                  <span>Continue</span>
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </>
-              )}
-            </button>
-          </form>
-        ) : (
-          <>
-            <button
-              onClick={handleAction}
-              disabled={loading}
-              className="group relative flex w-full items-center justify-center gap-3 rounded-xl bg-emerald-600 px-6 py-4 font-semibold text-white transition-all hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-900/20 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {loading ? (
-                <Loader2 className="animate-spin" />
-              ) : (
-                <Fingerprint className="transition-transform group-hover:scale-110" />
-              )}
-              <span>
-                {loading 
-                  ? (isRegistered ? 'Verifying...' : 'Creating Passkey...') 
-                  : (isRegistered ? 'Unlock with Passkey' : 'Create Secure Passkey')
-                }
-              </span>
-            </button>
-            <button 
-              onClick={() => { setStep('email'); setEmail(''); setError(null); }}
-              disabled={loading}
-              className="mt-4 text-sm text-slate-500 hover:text-slate-300"
-            >
-              Use a different email
-            </button>
-          </>
-        )}
-
-        {step === 'auth' && (
-          <p className="mt-6 text-xs text-slate-600">
-            Powered by WebAuthn. Biometric data stays on device.
-          </p>
-        )}
+        
+        <form onSubmit={handleEmailSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+              placeholder="you@example.com"
+            />
+          </div>
+          
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-slate-900 dark:bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-slate-800 dark:hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+              <>
+                <span className="text-xl">🔑</span>
+                Continue with Passkey
+              </>
+            )}
+          </button>
+        </form>
+        <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-6">
+          Secure, private, and encrypted. Your financial data stays yours.
+        </p>
       </div>
     </div>
   );
