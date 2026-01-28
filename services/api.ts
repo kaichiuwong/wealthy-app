@@ -85,7 +85,7 @@ async function encryptData(data: any, secret: string): Promise<{ encrypted: stri
   
   return {
     encrypted: arrayBufferToBase64(encrypted),
-    iv: arrayBufferToBase64(iv)
+    iv: arrayBufferToBase64(iv.buffer)
   };
 }
 
@@ -102,7 +102,7 @@ async function hmacSha256(message: string, secret: string): Promise<string> {
     ['sign']
   );
   
-  const signature = await crypto.subtle.sign('HMAC', key, messageData);
+  const signature = await crypto.subtle.sign('HMAC', key, messageData.buffer);
   return arrayBufferToBase64(signature);
 }
 
@@ -211,7 +211,7 @@ export const fetchWealthData = async (inputdate?: string): Promise<ApiResponse> 
   }
 };
 
-export const checkUserEmail = async (email: string): Promise<boolean> => {
+export const checkUserEmail = async (email: string): Promise<import('../types').CheckUserEmailResponse> => {
   try {
     const headers = await getAuthHeaders();
     const response = await fetch(`${BASE_URL}/check-user-email`, {
@@ -222,14 +222,14 @@ export const checkUserEmail = async (email: string): Promise<boolean> => {
 
     if (!response.ok) {
       // If the endpoint returns 404/500, we assume the user check failed or service is down
-      return false;
+      return { exists: false, message: 'User check failed' };
     }
 
     const data = await response.json();
-    return data.exists === true;
+    return data;
   } catch (error) {
     console.error('Error checking user email:', error);
-    return false;
+    return { exists: false, message: 'Error checking user email' };
   }
 };
 

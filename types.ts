@@ -34,6 +34,13 @@ export interface ApiResponse {
   balances: Record<string, MonthData>;
 }
 
+export interface CheckUserEmailResponse {
+  exists: boolean;
+  user?: any;
+  token?: string;
+  message?: string;
+}
+
 // UI State types
 export interface ChartDataPoint {
   month: string;
@@ -53,6 +60,8 @@ declare global {
     readonly VITE_API_KEY: string;
     readonly VITE_COINGECKO_API_KEY: string;
     readonly VITE_ALLOWED_EMAILS: string;
+    readonly VITE_BASE_URL: string;
+    readonly VITE_JWT_SECRET: string;
   }
 
   interface ImportMeta {
