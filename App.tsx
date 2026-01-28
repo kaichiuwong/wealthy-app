@@ -7,7 +7,7 @@ import Dashboard from './components/Dashboard';
 import Transactions from './components/Transactions';
 import Export from './components/Export';
 import Login from './components/Login';
-import { Loader2, Menu, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
