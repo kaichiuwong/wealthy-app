@@ -16,11 +16,11 @@ function getCookie(name: string): string | null {
 }
 
 function getUserEmailFromCookie(): string {
-  const email = getCookie('userEmail');
+  const email = getCookie('pa_email');
   if (!email) {
     throw new Error('User email not found in cookies. Please login again.');
   }
-  return email;
+  return decodeURIComponent(email);
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
