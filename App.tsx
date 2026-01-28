@@ -7,7 +7,7 @@ import Dashboard from './components/Dashboard';
 import Transactions from './components/Transactions';
 import Export from './components/Export';
 import Login from './components/Login';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Menu, X } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -16,6 +16,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<'dashboard' | 'transactions' | 'export'>('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -97,12 +98,35 @@ const App: React.FC = () => {
 
   if (!data) return null;
 
+  const handleNavigate = (view: 'dashboard' | 'transactions' | 'export') => {
+    setCurrentView(view);
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950">
+      {/* Mobile menu button */}
+      <button
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        className="fixed left-4 top-4 z-50 rounded-lg bg-slate-800 p-2 text-white sm:hidden"
+        aria-label="Toggle menu"
+      >
+        {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
+      {/* Mobile overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 sm:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       <Sidebar 
         currentView={currentView} 
-        onNavigate={setCurrentView}
+        onNavigate={handleNavigate}
         onLogout={handleLogout}
+        isMobileMenuOpen={isMobileMenuOpen}
       />
       
       {currentView === 'dashboard' && <Dashboard data={data} chartData={chartData} />}

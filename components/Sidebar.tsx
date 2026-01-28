@@ -5,9 +5,10 @@ interface SidebarProps {
   currentView: 'dashboard' | 'transactions' | 'export';
   onNavigate: (view: 'dashboard' | 'transactions' | 'export') => void;
   onLogout?: () => void;
+  isMobileMenuOpen?: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onLogout }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onLogout, isMobileMenuOpen = false }) => {
   const getLinkClass = (view: 'dashboard' | 'transactions' | 'export') => {
     const isActive = currentView === view;
     return `flex w-full items-center rounded-lg p-3 transition duration-75 group ${
@@ -28,7 +29,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onLogout }) 
   };
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 -translate-x-full border-r border-slate-800 bg-slate-950 transition-transform sm:translate-x-0">
+    <aside className={`fixed left-0 top-0 z-40 h-screen w-64 border-r border-slate-800 bg-slate-950 transition-transform ${
+      isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+    } sm:translate-x-0`}>
       <div className="flex h-full flex-col px-3 py-4">
         <div className="mb-10 flex items-center pl-2.5">
           <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
