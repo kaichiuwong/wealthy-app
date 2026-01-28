@@ -114,6 +114,13 @@ const Export: React.FC<ExportProps> = ({ data }) => {
       records.push(...balances);
     });
 
+    // Sort by date first, then by type
+    records.sort((a, b) => {
+      const dateCompare = a.inputdate.localeCompare(b.inputdate);
+      if (dateCompare !== 0) return dateCompare;
+      return a.trx_type.localeCompare(b.trx_type);
+    });
+
     const csvContent = convertToCSV(records);
     const filename = `wealth-data-all-${new Date().toISOString().split('T')[0]}.csv`;
     
