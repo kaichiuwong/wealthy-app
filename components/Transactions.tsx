@@ -7,6 +7,7 @@ import { saveBalanceItem, deleteMonthBalance, BalancePayload } from '../services
 interface TransactionsProps {
   data: ApiResponse;
   onRefresh?: () => void;
+  onModalChange?: (disable: boolean) => void;
 }
 
 interface FormState {
@@ -19,7 +20,7 @@ interface FormState {
   eth: string;
 }
 
-const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
+const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh, onModalChange }) => {
   const [showCashDetails, setShowCashDetails] = useState(false);
   const [showStockDetails, setShowStockDetails] = useState(false);
   const [showCryptoDetails, setShowCryptoDetails] = useState(false);
@@ -27,6 +28,13 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Disable swipe when modal is open
+  useEffect(() => {
+    if (onModalChange) {
+      onModalChange(isModalOpen);
+    }
+  }, [isModalOpen, onModalChange]);
   
   // Deletion State
   const [deletingMonth, setDeletingMonth] = useState<string | null>(null);
@@ -513,8 +521,12 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
 
       {/* Add Transaction Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-950 p-4 sm:p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/80 backdrop-blur-sm overflow-y-auto overscroll-contain">
+          <div 
+            className="w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl m-4 sm:my-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="max-h-[90vh] overflow-y-auto overscroll-contain p-4 sm:p-6">
             <div className="mb-6 flex items-center justify-between border-b border-slate-800 pb-4">
               <h2 className="text-xl font-bold text-white">Add Transactions</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
@@ -531,7 +543,8 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                   required
                   value={formData.date}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg border border-slate-800 bg-slate-900 p-2 sm:p-3 text-white outline-none focus:border-emerald-500 text-sm"
+                  className="w-full max-w-full rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 sm:p-3 text-white outline-none focus:border-emerald-500 text-sm"
+                  style={{ WebkitAppearance: 'none', appearance: 'none' }}
                 />
               </div>
 
@@ -657,6 +670,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}

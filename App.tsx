@@ -136,9 +136,9 @@ const App: React.FC = () => {
   return (
     <div 
       className="min-h-screen bg-slate-950"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
+      onTouchStart={isMobileMenuOpen ? undefined : onTouchStart}
+      onTouchMove={isMobileMenuOpen ? undefined : onTouchMove}
+      onTouchEnd={isMobileMenuOpen ? undefined : onTouchEnd}
     >
       {/* Mobile overlay */}
       {isMobileMenuOpen && (
@@ -156,7 +156,7 @@ const App: React.FC = () => {
       />
       
       {currentView === 'dashboard' && <Dashboard data={data} chartData={chartData} />}
-      {currentView === 'transactions' && <Transactions data={data} onRefresh={loadData} />}
+      {currentView === 'transactions' && <Transactions data={data} onRefresh={loadData} onModalChange={setIsMobileMenuOpen} />}
       {currentView === 'export' && <Export data={data} />}
     </div>
   );
