@@ -1,31 +1,30 @@
-<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="180" height="180" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
   <!-- Background -->
-  <rect width="180" height="180" rx="40" fill="#020617"/>
+  <rect width="180" height="180" fill="#020617"/>
   
-  <!-- Gradient definition -->
-  <defs>
-    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
-    </linearGradient>
-  </defs>
+  <!-- Money bag emoji -->
+  <text x="90" y="125" font-family="Arial, sans-serif" font-size="90" text-anchor="middle">💰</text>
   
-  <!-- Dollar sign circle -->
-  <circle cx="90" cy="90" r="50" fill="url(#goldGradient)" opacity="0.15"/>
+  <!-- Trending up chart above -->
+  <polyline points="35,50 55,42 75,30 95,22 115,10" 
+            fill="none" 
+            stroke="#10b981" 
+            stroke-width="5" 
+            stroke-linecap="round" 
+            stroke-linejoin="round"/>
   
-  <!-- Dollar sign -->
-  <path d="M90 50 L90 130 M75 65 Q75 58 82 58 L98 58 Q105 58 105 65 Q105 72 98 72 L82 82 Q75 82 75 89 Q75 96 82 96 L98 96 Q105 96 105 103 Q105 110 98 110 L82 110 Q75 110 75 103" 
-        stroke="url(#goldGradient)" 
-        stroke-width="8" 
-        stroke-linecap="round" 
-        stroke-linejoin="round" 
-        fill="none"/>
+  <!-- Arrow tip -->
+  <polyline points="105,8 115,10 112,18" 
+            fill="none" 
+            stroke="#10b981" 
+            stroke-width="5" 
+            stroke-linecap="round" 
+            stroke-linejoin="round"/>
   
-  <!-- Trending up arrow -->
-  <path d="M125 55 L145 55 L145 75 M145 55 L120 80" 
-        stroke="#10b981" 
-        stroke-width="5" 
-        stroke-linecap="round" 
-        stroke-linejoin="round" 
-        fill="none"/>
+  <!-- Chart dots -->
+  <circle cx="35" cy="50" r="4" fill="#10b981"/>
+  <circle cx="55" cy="42" r="4" fill="#10b981"/>
+  <circle cx="75" cy="30" r="4" fill="#10b981"/>
+  <circle cx="95" cy="22" r="4" fill="#10b981"/>
+  <circle cx="115" cy="10" r="4" fill="#10b981"/>
 </svg>
