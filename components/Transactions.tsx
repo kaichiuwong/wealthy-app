@@ -513,8 +513,8 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
 
       {/* Add Transaction Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-950 p-4 sm:p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
             <div className="mb-6 flex items-center justify-between border-b border-slate-800 pb-4">
               <h2 className="text-xl font-bold text-white">Add Transactions</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
@@ -522,7 +522,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-400">Date</label>
                 <input 
@@ -531,13 +531,13 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                   required
                   value={formData.date}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg border border-slate-800 bg-slate-900 p-3 text-white outline-none focus:border-emerald-500"
+                  className="w-full rounded-lg border border-slate-800 bg-slate-900 p-2 sm:p-3 text-white outline-none focus:border-emerald-500 text-sm"
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
                 {/* CASH */}
-                <div className="space-y-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                <div className="space-y-3 sm:space-y-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 sm:p-4">
                    <h3 className="flex items-center gap-2 font-semibold text-emerald-400">
                       CASH
                    </h3>
@@ -555,7 +555,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                 </div>
 
                 {/* STOCK */}
-                <div className="space-y-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4">
+                <div className="space-y-3 sm:space-y-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3 sm:p-4">
                    <h3 className="flex items-center gap-2 font-semibold text-indigo-400">
                       STOCK
                    </h3>
@@ -566,7 +566,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh }) => {
                 </div>
 
                 {/* CRYPTO */}
-                <div className="col-span-1 space-y-4 rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 md:col-span-2">
+                <div className="col-span-1 space-y-3 sm:space-y-4 rounded-xl border border-violet-500/20 bg-violet-500/5 p-3 sm:p-4 md:col-span-2">
                    <div className="flex items-center justify-between">
                        <h3 className="flex items-center gap-2 font-semibold text-violet-400">
                           CRYPTO <span className="text-xs font-normal text-slate-500">(At least one required)</span>

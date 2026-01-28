@@ -17,6 +17,8 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<'dashboard' | 'transactions' | 'export'>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -103,17 +105,41 @@ const App: React.FC = () => {
     setIsMobileMenuOpen(false);
   };
 
-  return (
-    <div className="min-h-screen bg-slate-950">
-      {/* Mobile menu button */}
-      <button
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="fixed left-4 top-4 z-50 rounded-lg bg-slate-800 p-2 text-white sm:hidden"
-        aria-label="Toggle menu"
-      >
-        {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
+  // Swipe gesture handlers
+  const minSwipeDistance = 50;
 
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    // Right swipe from left edge opens menu
+    if (isRightSwipe && touchStart < 50) {
+      setIsMobileMenuOpen(true);
+    }
+    // Left swipe closes menu
+    if (isLeftSwipe && isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
+  };
+
+  return (
+    <div 
+      className="min-h-screen bg-slate-950"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       {/* Mobile overlay */}
       {isMobileMenuOpen && (
         <div
