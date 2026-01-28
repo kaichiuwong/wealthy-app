@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ApiResponse, BalanceItem } from '../types';
-import { Download, FileDown, Calendar, DollarSign, TrendingUp } from 'lucide-react';
+import { Download, FileDown, Calendar, TrendingUp } from 'lucide-react';
 import { parseDateKey, formatDateDisplay } from '../utils';
 
 interface ExportProps {
