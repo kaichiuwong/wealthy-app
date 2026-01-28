@@ -213,7 +213,14 @@ export const fetchWealthData = async (inputdate?: string): Promise<ApiResponse> 
 
 export const checkUserEmail = async (email: string): Promise<import('../types').CheckUserEmailResponse> => {
   try {
-    const headers = await getAuthHeaders();
+    // Generate JWT directly with the provided email (no cookie needed for login flow)
+    const jwt = await generateJWT(email);
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${jwt}`,
+      'apikey': API_KEY
+    };
+    
     const response = await fetch(`${BASE_URL}/check-user-email`, {
       method: 'POST',
       headers,
