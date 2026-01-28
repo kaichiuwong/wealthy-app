@@ -344,3 +344,75 @@ export const deleteMonthBalance = async (month: string): Promise<void> => {
     throw error;
   }
 };
+
+// --- 2FA API Functions ---
+
+export const enable2FA = async (): Promise<{
+  secret: string;
+  qrCode: string;
+  backupCodes: string[];
+  message: string;
+}> => {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${BASE_URL}/enable-2fa`, {
+    method: 'POST',
+    headers
+  });
+  
+  if (!response.ok) {
+    throw new Error(await response.text() || response.statusText);
+  }
+  
+  return response.json();
+};
+
+export const verify2FA = async (
+  code: string,
+  enableAfterVerify: boolean,
+  email?: string
+): Promise<{
+  verified: boolean;
+  twoFactorEnabled: boolean;
+  usedBackupCode: boolean;
+  remainingBackupCodes: number;
+}> => {
+  let headers;
+  if (email) {
+    // For login flow, generate JWT with email
+    const jwt = await generateJWT(email);
+    headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${jwt}`,
+      'apikey': API_KEY
+    };
+  } else {
+    // For already logged-in users
+    headers = await getAuthHeaders();
+  }
+  
+  const response = await fetch(`${BASE_URL}/verify-2fa`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ code, enableAfterVerify })
+  });
+  
+  if (!response.ok) {
+    throw new Error(await response.text() || response.statusText);
+  }
+  
+  return response.json();
+};
+
+export const disable2FA = async (): Promise<{ success: boolean; message: string }> => {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${BASE_URL}/disable-2fa`, {
+    method: 'POST',
+    headers
+  });
+  
+  if (!response.ok) {
+    throw new Error(await response.text() || response.statusText);
+  }
+  
+  return response.json();
+};

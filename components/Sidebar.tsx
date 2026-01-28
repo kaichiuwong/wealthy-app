@@ -1,15 +1,15 @@
 import React from 'react';
-import { LayoutDashboard, Wallet, LogOut, TrendingUp, Download } from 'lucide-react';
+import { LayoutDashboard, Wallet, LogOut, TrendingUp, Download, Shield } from 'lucide-react';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'transactions' | 'export';
-  onNavigate: (view: 'dashboard' | 'transactions' | 'export') => void;
+  currentView: 'dashboard' | 'transactions' | 'export' | '2fa-setup';
+  onNavigate: (view: 'dashboard' | 'transactions' | 'export' | '2fa-setup') => void;
   onLogout?: () => void;
   isMobileMenuOpen?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onLogout, isMobileMenuOpen = false }) => {
-  const getLinkClass = (view: 'dashboard' | 'transactions' | 'export') => {
+  const getLinkClass = (view: 'dashboard' | 'transactions' | 'export' | '2fa-setup') => {
     const isActive = currentView === view;
     return `flex w-full items-center rounded-lg p-3 transition duration-75 group ${
       isActive 
@@ -72,6 +72,15 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onLogout, is
         
         <div className="mt-auto">
           <ul className="space-y-2 font-medium border-t border-slate-800 pt-4">
+            <li>
+              <button 
+                onClick={() => onNavigate('2fa-setup')}
+                className={getLinkClass('2fa-setup')}
+              >
+                <Shield className={`h-5 w-5 ${currentView === '2fa-setup' ? 'text-emerald-500' : 'text-slate-400 group-hover:text-white'}`} />
+                <span className="ml-3">2FA Security</span>
+              </button>
+            </li>
             <li>
               <button onClick={handleLogoutClick} className="flex w-full items-center rounded-lg p-3 text-slate-400 hover:bg-slate-800 hover:text-white group">
                 <LogOut className="h-5 w-5 transition duration-75 group-hover:text-white" />

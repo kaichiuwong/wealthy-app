@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard';
 import Transactions from './components/Transactions';
 import Export from './components/Export';
 import Login from './components/Login';
+import { TwoFactorSetup } from './components/TwoFactorSetup';
 import { Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -15,7 +16,7 @@ const App: React.FC = () => {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'transactions' | 'export'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'transactions' | 'export' | '2fa-setup'>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -100,9 +101,17 @@ const App: React.FC = () => {
 
   if (!data) return null;
 
-  const handleNavigate = (view: 'dashboard' | 'transactions' | 'export') => {
+  const handleNavigate = (view: 'dashboard' | 'transactions' | 'export' | '2fa-setup') => {
     setCurrentView(view);
     setIsMobileMenuOpen(false);
+  };
+
+  const handle2FAComplete = () => {
+    setCurrentView('dashboard');
+  };
+
+  const handle2FACancel = () => {
+    setCurrentView('dashboard');
   };
 
   // Swipe gesture handlers
@@ -150,6 +159,11 @@ const App: React.FC = () => {
 
       <Sidebar 
         currentView={currentView} 
+      {currentView === '2fa-setup' && (
+        <div className="p-4 sm:ml-64 sm:p-8">
+          <TwoFactorSetup onComplete={handle2FAComplete} onCancel={handle2FACancel} />
+        </div>
+      )}
         onNavigate={handleNavigate}
         onLogout={handleLogout}
         isMobileMenuOpen={isMobileMenuOpen}

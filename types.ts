@@ -36,7 +36,11 @@ export interface ApiResponse {
 
 export interface CheckUserEmailResponse {
   exists: boolean;
-  user?: any;
+  user?: {
+    id?: string;
+    email?: string;
+    two_factor_enabled?: boolean;
+  };
   token?: string;
   message?: string;
 }

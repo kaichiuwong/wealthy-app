@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { checkUserEmail } from '../services/api';
+import { TwoFactorVerification } from './TwoFactorVerification';
 
 interface LoginProps {
   onSuccess: () => void;
@@ -13,6 +14,8 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
     const emailCookie = cookies.find(c => c.startsWith('pa_email='));
     return emailCookie ? decodeURIComponent(emailCookie.split('=')[1]) : '';
   });
+  const [step, setStep] = useState<'email' | '2fa-verify'>('email');
+  const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -38,12 +41,21 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
       expiryDate.setDate(expiryDate.getDate() + 30);
       document.cookie = `pa_email=${encodeURIComponent(email.trim())}; expires=${expiryDate.toUTCString()}; path=/; SameSite=Strict`;
       
-      // Store auth token and user data
+      // Store auth token temporarily
       localStorage.setItem('pa_token', data.token);
       localStorage.setItem('pa_email', email.trim());
-      localStorage.setItem('pa_user', JSON.stringify(data.user));
       
-      onSuccess();
+      // Store user data temporarily
+      setUserData(data.user);
+      
+      // Check if 2FA is enabled
+      if (data.user.two_factor_enabled) {
+        setStep('2fa-verify');
+      } else {
+        // No 2FA, proceed with login
+        localStorage.setItem('pa_user', JSON.stringify(data.user));
+        onSuccess();
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed';
       setError(errorMessage);
@@ -51,6 +63,32 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
       setLoading(false);
     }
   };
+
+  const handle2FAVerified = () => {
+    // Save user data and complete login
+    if (userData) {
+      localStorage.setItem('pa_user', JSON.stringify(userData));
+    }
+    onSuccess();
+  };
+
+  const handle2FACancel = () => {
+    // Go back to email step
+    setStep('email');
+    setUserData(null);
+    setError('');
+  };
+
+  // Show 2FA verification screen
+  if (step === '2fa-verify') {
+    return (
+      <TwoFactorVerification 
+        onVerified={handle2FAVerified} 
+        onCancel={handle2FACancel}
+        email={email}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-emerald-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
@@ -89,7 +127,7 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
               <>
                 <span className="text-xl">🔑</span>
-                Continue with Passkey
+                Continue
               </>
             )}
           </button>
