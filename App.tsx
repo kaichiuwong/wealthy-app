@@ -159,11 +159,6 @@ const App: React.FC = () => {
 
       <Sidebar 
         currentView={currentView} 
-      {currentView === '2fa-setup' && (
-        <div className="p-4 sm:ml-64 sm:p-8">
-          <TwoFactorSetup onComplete={handle2FAComplete} onCancel={handle2FACancel} />
-        </div>
-      )}
         onNavigate={handleNavigate}
         onLogout={handleLogout}
         isMobileMenuOpen={isMobileMenuOpen}
@@ -172,6 +167,11 @@ const App: React.FC = () => {
       {currentView === 'dashboard' && <Dashboard data={data} chartData={chartData} />}
       {currentView === 'transactions' && <Transactions data={data} onRefresh={loadData} onModalChange={setIsMobileMenuOpen} />}
       {currentView === 'export' && <Export data={data} />}
+      {currentView === '2fa-setup' && (
+        <div className="p-4 sm:ml-64 sm:p-8">
+          <TwoFactorSetup onComplete={handle2FAComplete} onCancel={handle2FACancel} />
+        </div>
+      )}
     </div>
   );
 };
