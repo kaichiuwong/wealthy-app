@@ -21,6 +21,44 @@ const App: React.FC = () => {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
+  // Check JWT token validity on mount
+  useEffect(() => {
+    const checkAuth = () => {
+      try {
+        const token = localStorage.getItem('pa_token');
+        const user = localStorage.getItem('pa_user');
+        
+        if (!token || !user) {
+          setIsAuthenticated(false);
+          setLoading(false);
+          return;
+        }
+
+        // Decode JWT to check expiration
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const currentTime = Math.floor(Date.now() / 1000);
+        
+        if (payload.exp && payload.exp > currentTime) {
+          // Token is still valid
+          setIsAuthenticated(true);
+        } else {
+          // Token expired, clear storage
+          localStorage.removeItem('pa_token');
+          localStorage.removeItem('pa_user');
+          localStorage.removeItem('pa_email');
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -47,6 +85,11 @@ const App: React.FC = () => {
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
+      
+      // If API error is due to expired token, force logout
+      if (err instanceof Error && err.message.includes('401')) {
+        handleLogout();
+      }
     } finally {
       setLoading(false);
     }
@@ -61,6 +104,9 @@ const App: React.FC = () => {
 
   // Handle Logout
   const handleLogout = () => {
+    localStorage.removeItem('pa_token');
+    localStorage.removeItem('pa_user');
+    localStorage.removeItem('pa_email');
     setIsAuthenticated(false);
     setData(null);
   };
