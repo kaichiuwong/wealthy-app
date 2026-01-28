@@ -5,6 +5,7 @@ import { parseDateKey, formatDateDisplay } from './utils';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Transactions from './components/Transactions';
+import Export from './components/Export';
 import Login from './components/Login';
 import { Loader2 } from 'lucide-react';
 
@@ -14,7 +15,7 @@ const App: React.FC = () => {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'transactions'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'transactions' | 'export'>('dashboard');
 
   const loadData = useCallback(async () => {
     try {
@@ -104,11 +105,9 @@ const App: React.FC = () => {
         onLogout={handleLogout}
       />
       
-      {currentView === 'dashboard' ? (
-        <Dashboard data={data} chartData={chartData} />
-      ) : (
-        <Transactions data={data} onRefresh={loadData} />
-      )}
+      {currentView === 'dashboard' && <Dashboard data={data} chartData={chartData} />}
+      {currentView === 'transactions' && <Transactions data={data} onRefresh={loadData} />}
+      {currentView === 'export' && <Export data={data} />}
     </div>
   );
 };

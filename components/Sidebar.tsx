@@ -1,14 +1,14 @@
 import React from 'react';
-import { LayoutDashboard, Wallet, LogOut, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Wallet, LogOut, TrendingUp, Download } from 'lucide-react';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'transactions';
-  onNavigate: (view: 'dashboard' | 'transactions') => void;
+  currentView: 'dashboard' | 'transactions' | 'export';
+  onNavigate: (view: 'dashboard' | 'transactions' | 'export') => void;
   onLogout?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onLogout }) => {
-  const getLinkClass = (view: 'dashboard' | 'transactions') => {
+  const getLinkClass = (view: 'dashboard' | 'transactions' | 'export') => {
     const isActive = currentView === view;
     return `flex w-full items-center rounded-lg p-3 transition duration-75 group ${
       isActive 
@@ -54,6 +54,15 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onLogout }) 
             >
               <Wallet className={`h-5 w-5 ${currentView === 'transactions' ? 'text-emerald-500' : 'text-slate-400 group-hover:text-white'}`} />
               <span className="ml-3">Transactions</span>
+            </button>
+          </li>
+          <li>
+            <button 
+              onClick={() => onNavigate('export')}
+              className={getLinkClass('export')}
+            >
+              <Download className={`h-5 w-5 ${currentView === 'export' ? 'text-emerald-500' : 'text-slate-400 group-hover:text-white'}`} />
+              <span className="ml-3">Export</span>
             </button>
           </li>
         </ul>
