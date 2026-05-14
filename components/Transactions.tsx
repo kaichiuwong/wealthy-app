@@ -14,6 +14,7 @@ interface FormState {
   date: string;
   bankAud: string;
   bankHkd: string;
+  bankUsd: string;
   ibkrAud: string;
   btc: string;
   xrp: string;
@@ -43,6 +44,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh, onModalCha
     date: new Date().toISOString().split('T')[0],
     bankAud: '',
     bankHkd: '',
+    bankUsd: '',
     ibkrAud: '',
     btc: '',
     xrp: '',
@@ -108,6 +110,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh, onModalCha
     const rates: Record<string, number> = {
       AUD: 1.0,
       HKD: 0.20, // Fallback
+      USD: 1.55, // Fallback
       BTC: 100000, // Fallback
       ETH: 4000, // Fallback
       XRP: 4.0 // Fallback
@@ -119,16 +122,17 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh, onModalCha
     const today = new Date().toISOString().split('T')[0];
     const isCurrentOrFuture = dateStr >= today;
 
-    // 1. Fiat (HKD) - Frankfurter
+    // 1. Fiat (HKD, USD) - Frankfurter
     try {
         const url = isCurrentOrFuture 
-            ? 'https://api.frankfurter.app/latest?from=HKD&to=AUD'
-            : `https://api.frankfurter.app/${dateStr}?from=HKD&to=AUD`;
+            ? 'https://api.frankfurter.app/latest?from=AUD&to=HKD,USD'
+            : `https://api.frankfurter.app/${dateStr}?from=AUD&to=HKD,USD`;
             
         const fiatRes = await fetch(url);
         if (fiatRes.ok) {
             const fiatData = await fiatRes.json();
-            if (fiatData.rates?.AUD) rates.HKD = fiatData.rates.AUD;
+            if (fiatData.rates?.HKD) rates.HKD = 1 / fiatData.rates.HKD;
+            if (fiatData.rates?.USD) rates.USD = 1 / fiatData.rates.USD;
         }
     } catch (e) {
         console.warn('Fiat rate fetch failed', e);
@@ -234,6 +238,11 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh, onModalCha
       errors.push("Bank (HKD) is required and must be greater than 0");
     }
 
+    const bankUsdVal = parseFloat(formData.bankUsd);
+    if (!formData.bankUsd || isNaN(bankUsdVal) || bankUsdVal <= 0) {
+      errors.push("Bank (USD) is required and must be greater than 0");
+    }
+
     const ibkrAudVal = parseFloat(formData.ibkrAud);
     if (!formData.ibkrAud || isNaN(ibkrAudVal) || ibkrAudVal <= 0) {
       errors.push("IBKR (AUD) is required and must be greater than 0");
@@ -281,6 +290,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh, onModalCha
 
         pushRequest(formData.bankAud, 'BANK', 'AUD', 'CASH', 1);
         pushRequest(formData.bankHkd, 'BANK', 'HKD', 'CASH');
+        pushRequest(formData.bankUsd, 'BANK', 'USD', 'CASH');
         pushRequest(formData.ibkrAud, 'IBKR', 'AUD', 'STOCK', 1);
         pushRequest(formData.btc, 'BTC', 'BTC', 'CRYPTO');
         pushRequest(formData.xrp, 'XRP', 'XRP', 'CRYPTO');
@@ -293,6 +303,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh, onModalCha
             date: new Date().toISOString().split('T')[0],
             bankAud: '',
             bankHkd: '',
+            bankUsd: '',
             ibkrAud: '',
             btc: '',
             xrp: '',
@@ -339,7 +350,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh, onModalCha
                 </th>
                 {/* CASH Header - Clickable */}
                 <th 
-                  colSpan={showCashDetails ? 4 : 2} 
+                  colSpan={showCashDetails ? 5 : 2} 
                   onClick={() => setShowCashDetails(!showCashDetails)}
                   className="border-b border-l border-slate-800 px-4 py-2 text-center text-emerald-500 font-bold bg-slate-950/50 cursor-pointer hover:bg-slate-900/80 transition-colors select-none group"
                 >
@@ -393,6 +404,7 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh, onModalCha
                 {showCashDetails && (
                   <>
                     <th className="border-b border-l border-slate-800/50 px-4 py-3 bg-slate-950/30">HKD</th>
+                    <th className="border-b border-slate-800 px-4 py-3 bg-slate-950/30">USD</th>
                     <th className="border-b border-slate-800 px-4 py-3 bg-slate-950/30">AUD</th>
                   </>
                 )}
@@ -451,6 +463,9 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh, onModalCha
                       <>
                         <td className="px-4 py-4 text-slate-300 border-l border-slate-800/50">
                           {formatFiat(getAmount(monthKey, 'BANK', 'HKD'), 'HKD')}
+                        </td>
+                        <td className="px-4 py-4 text-slate-300">
+                          {formatFiat(getAmount(monthKey, 'BANK', 'USD'), 'USD')}
                         </td>
                         <td className="px-4 py-4 text-slate-300">
                           {formatFiat(getAmount(monthKey, 'BANK', 'AUD'), 'AUD')}
@@ -563,6 +578,13 @@ const Transactions: React.FC<TransactionsProps> = ({ data, onRefresh, onModalCha
                       <input type="number" step="0.01" name="bankHkd" value={formData.bankHkd} onChange={handleInputChange} placeholder="0.00" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-emerald-500" />
                       <div className="mt-1 text-xs text-slate-500">
                          {loadingRates ? 'Fetching rate...' : `Rate: ${currentRates.HKD?.toFixed(4) ?? '-'} AUD`}
+                      </div>
+                   </div>
+                   <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-500">Bank (USD) <span className="text-rose-500">*</span></label>
+                      <input type="number" step="0.01" name="bankUsd" value={formData.bankUsd} onChange={handleInputChange} placeholder="0.00" className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white outline-none focus:border-emerald-500" />
+                      <div className="mt-1 text-xs text-slate-500">
+                         {loadingRates ? 'Fetching rate...' : `Rate: ${currentRates.USD?.toFixed(4) ?? '-'} AUD`}
                       </div>
                    </div>
                 </div>
